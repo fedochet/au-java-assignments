@@ -1,6 +1,6 @@
 package ru.spbau.task1;
 
-interface TreeNode {
+interface TrieNode {
     boolean add(String element, int fromPosition);
 
     boolean contains(String element, int fromPosition);

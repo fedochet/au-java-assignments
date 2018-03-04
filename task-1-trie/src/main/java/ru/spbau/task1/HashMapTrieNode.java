@@ -3,8 +3,8 @@ package ru.spbau.task1;
 import java.util.HashMap;
 import java.util.Map;
 
-class HashMapTreeNode implements TreeNode {
-    private Map<Character, TreeNode> nextNodes = new HashMap<>();
+class HashMapTrieNode implements TrieNode {
+    private Map<Character, TrieNode> nextNodes = new HashMap<>();
     private boolean isTerminal = false;
     private int size = 0;
 
@@ -22,7 +22,7 @@ class HashMapTreeNode implements TreeNode {
 
         char currentChar = element.charAt(fromPosition);
         boolean newNodesCreated = !nextNodes.containsKey(currentChar);
-        TreeNode nextNode = nextNodes.computeIfAbsent(currentChar, c -> new HashMapTreeNode());
+        TrieNode nextNode = nextNodes.computeIfAbsent(currentChar, c -> new HashMapTrieNode());
         boolean addedInNextNodes = nextNode.add(element, fromPosition + 1);
         boolean isAdded = newNodesCreated || addedInNextNodes;
         if (isAdded) {

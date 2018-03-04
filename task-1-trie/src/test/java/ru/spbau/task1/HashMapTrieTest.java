@@ -9,11 +9,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class NaiveTrieTest {
-    private Trie trie = new NaiveTrie();
+class HashMapTrieTest {
+    private Trie trie = new HashMapTrie();
 
     @Nested
-    @DisplayName("test newly created NaiveTrie")
+    @DisplayName("test newly created HashMapTrie")
     class NewTrieTest {
 
         @Test
