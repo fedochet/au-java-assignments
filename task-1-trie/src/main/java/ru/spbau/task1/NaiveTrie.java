@@ -1,15 +1,13 @@
 package ru.spbau.task1;
 
 import java.text.MessageFormat;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 public class NaiveTrie implements Trie {
 
     private static final Pattern IS_ALPHABETIC = Pattern.compile("[a-zA-Z]+");
 
-    private TreeNode treeNode = new NaiveTreeNode();
+    private TreeNode treeNode = new HashMapTreeNode();
 
     @Override
     public boolean add(String element) {
@@ -44,32 +42,4 @@ public class NaiveTrie implements Trie {
         return element;
     }
 
-    private class NaiveTreeNode implements TreeNode {
-        private final Set<String> strings = new HashSet<>();
-
-        @Override
-        public boolean add(String element, int fromPosition) {
-            return strings.add(element);
-        }
-
-        @Override
-        public boolean contains(String element, int fromPosition) {
-            return strings.contains(element);
-        }
-
-        @Override
-        public boolean remove(String element, int fromPosition) {
-            return strings.remove(element);
-        }
-
-        @Override
-        public int size() {
-            return strings.size();
-        }
-
-        @Override
-        public int countByPrefix(String prefix, int fromPosition) {
-            return ((int) strings.stream().filter(s -> s.startsWith(prefix)).count());
-        }
-    }
 }

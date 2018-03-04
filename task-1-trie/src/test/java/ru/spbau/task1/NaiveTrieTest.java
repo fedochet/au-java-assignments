@@ -126,6 +126,26 @@ class NaiveTrieTest {
     }
 
     @Test
+    void deleting_of_full_prefix_works_correctly() {
+        trie.add("hello");
+        trie.add("helloween");
+
+        assertThat(trie.remove("hello")).isTrue();
+        assertThat(trie.size()).isEqualTo(1);
+        assertThat(trie.contains("helloween"));
+        assertThat(trie.contains("hello")).isFalse();
+    }
+
+    @Test
+    void deleting_of_full_prefix_when_it_doesnt_exist_works_correctly() {
+        trie.add("helloween");
+
+        assertThat(trie.remove("hello")).isFalse();
+        assertThat(trie.size()).isEqualTo(1);
+        assertThat(trie.contains("helloween"));
+    }
+
+    @Test
     void element_counts_for_each_of_it_prefixes() {
         trie.add("element");
 
