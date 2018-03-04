@@ -13,17 +13,17 @@ public class NaiveTrie implements Trie {
 
     @Override
     public boolean add(String element) {
-        return strings.add(assertElement(element));
+        return strings.add(assertIsAlpbhabetic(element));
     }
 
     @Override
     public boolean contains(String element) {
-        return strings.contains(element);
+        return strings.contains(assertIsAlpbhabetic(element));
     }
 
     @Override
     public boolean remove(String element) {
-        return strings.remove(element);
+        return strings.remove(assertIsAlpbhabetic(element));
     }
 
     @Override
@@ -33,10 +33,11 @@ public class NaiveTrie implements Trie {
 
     @Override
     public int howManyStartsWithPrefix(String prefix) {
+        assertIsAlpbhabetic(prefix);
         return 0;
     }
 
-    private String assertElement(String element) {
+    private String assertIsAlpbhabetic(String element) {
         if (!IS_ALPHABETIC.matcher(element).matches()) {
             throw new IllegalArgumentException(MessageFormat.format("Cannot accept {0} because it is not alphabetic string.", element));
         }
