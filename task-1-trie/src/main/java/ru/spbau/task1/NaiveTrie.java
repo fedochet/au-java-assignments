@@ -9,32 +9,31 @@ public class NaiveTrie implements Trie {
 
     private static final Pattern IS_ALPHABETIC = Pattern.compile("[a-zA-Z]+");
 
-    private final Set<String> strings = new HashSet<>();
+    private TreeNode treeNode = new NaiveTreeNode();
 
     @Override
     public boolean add(String element) {
-        return strings.add(assertIsAlpbhabetic(element));
+        return treeNode.add(assertIsAlpbhabetic(element), 0);
     }
 
     @Override
     public boolean contains(String element) {
-        return strings.contains(assertIsAlpbhabetic(element));
+        return treeNode.contains(assertIsAlpbhabetic(element), 0);
     }
 
     @Override
     public boolean remove(String element) {
-        return strings.remove(assertIsAlpbhabetic(element));
+        return treeNode.remove(assertIsAlpbhabetic(element), 0);
     }
 
     @Override
     public int size() {
-        return strings.size();
+        return treeNode.size();
     }
 
     @Override
     public int howManyStartsWithPrefix(String prefix) {
-        assertIsAlpbhabetic(prefix);
-        return ((int) strings.stream().filter(s -> s.startsWith(prefix)).count());
+        return treeNode.countByPrefix(assertIsAlpbhabetic(prefix), 0);
     }
 
     private String assertIsAlpbhabetic(String element) {
@@ -43,5 +42,34 @@ public class NaiveTrie implements Trie {
         }
 
         return element;
+    }
+
+    private class NaiveTreeNode implements TreeNode {
+        private final Set<String> strings = new HashSet<>();
+
+        @Override
+        public boolean add(String element, int fromPosition) {
+            return strings.add(element);
+        }
+
+        @Override
+        public boolean contains(String element, int fromPosition) {
+            return strings.contains(element);
+        }
+
+        @Override
+        public boolean remove(String element, int fromPosition) {
+            return strings.remove(element);
+        }
+
+        @Override
+        public int size() {
+            return strings.size();
+        }
+
+        @Override
+        public int countByPrefix(String prefix, int fromPosition) {
+            return ((int) strings.stream().filter(s -> s.startsWith(prefix)).count());
+        }
     }
 }
