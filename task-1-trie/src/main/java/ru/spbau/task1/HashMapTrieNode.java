@@ -12,17 +12,11 @@ class HashMapTrieNode implements TrieNode {
     @Override
     public boolean add(String element, int fromPosition) {
         if (fromPosition >= element.length()) {
-            if (isTerminal) {
-                return false;
-            } else {
-                isTerminal = true;
-                size++;
-                return true;
-            }
+            return addWordToCurrentNode();
         }
 
         char currentChar = element.charAt(fromPosition);
-        TrieNode nextNode = nextNodes.computeIfAbsent(currentChar, c -> new HashMapTrieNode());
+        TrieNode nextNode = getOrCreateNextNode(currentChar);
         boolean added = nextNode.add(element, fromPosition + 1);
         if (added) {
             size++;
@@ -45,13 +39,7 @@ class HashMapTrieNode implements TrieNode {
     @Override
     public boolean remove(String element, int fromPosition) {
         if (fromPosition >= element.length()) {
-            if (isTerminal) {
-                isTerminal = false;
-                size--;
-                return true;
-            } else {
-                return false;
-            }
+            return removeWordFromCurrentNode();
         }
 
         char currentChar = element.charAt(fromPosition);
@@ -60,10 +48,8 @@ class HashMapTrieNode implements TrieNode {
             .orElse(false);
 
         if (isDeleted) {
+            removeNextNodeIfEmpty(currentChar);
             size--;
-            if (nextNodes.get(currentChar).size() == 0) {
-                nextNodes.remove(currentChar);
-            }
         }
 
         return isDeleted;
@@ -86,7 +72,37 @@ class HashMapTrieNode implements TrieNode {
             .orElse(0);
     }
 
-    private Optional<TrieNode> getNextNode(char c) {
-        return Optional.ofNullable(nextNodes.get(c));
+    private boolean addWordToCurrentNode() {
+        if (isTerminal) {
+            return false;
+        } else {
+            isTerminal = true;
+            size++;
+            return true;
+        }
+    }
+
+    private boolean removeWordFromCurrentNode() {
+        if (isTerminal) {
+            isTerminal = false;
+            size--;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void removeNextNodeIfEmpty(char currentChar) {
+        if (nextNodes.get(currentChar).size() == 0) {
+            nextNodes.remove(currentChar);
+        }
+    }
+
+    private Optional<TrieNode> getNextNode(char currentChar) {
+        return Optional.ofNullable(nextNodes.get(currentChar));
+    }
+
+    private TrieNode getOrCreateNextNode(char currentChar) {
+        return nextNodes.computeIfAbsent(currentChar, c -> new HashMapTrieNode());
     }
 }
