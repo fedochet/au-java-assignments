@@ -31,6 +31,10 @@ class NaiveTrieTest {
             assertThat(trie.remove("anything")).isFalse();
         }
 
+        @Test
+        void nothing_starts_with_some_prefix_in_new_trie() {
+            assertThat(trie.howManyStartsWithPrefix("anything")).isEqualTo(0);
+        }
     }
 
     @DisplayName("trie should not accept non-alphabetical element for addition")
@@ -108,7 +112,7 @@ class NaiveTrieTest {
     }
 
     @Test
-    void trie_size_decreases_after_successfull_deletions() {
+    void trie_size_decreases_after_successful_deletions() {
         trie.add("one");
         trie.add("two");
         trie.add("three");
@@ -119,5 +123,63 @@ class NaiveTrieTest {
         assertThat(trie.size()).isEqualTo(1);
         trie.remove("three");
         assertThat(trie.size()).isEqualTo(0);
+    }
+
+    @Test
+    void element_counts_for_each_of_it_prefixes() {
+        trie.add("element");
+
+        assertThat(trie.howManyStartsWithPrefix("e")).isEqualTo(1);
+        assertThat(trie.howManyStartsWithPrefix("el")).isEqualTo(1);
+        assertThat(trie.howManyStartsWithPrefix("ele")).isEqualTo(1);
+        assertThat(trie.howManyStartsWithPrefix("elem")).isEqualTo(1);
+        assertThat(trie.howManyStartsWithPrefix("eleme")).isEqualTo(1);
+        assertThat(trie.howManyStartsWithPrefix("elemen")).isEqualTo(1);
+        assertThat(trie.howManyStartsWithPrefix("element")).isEqualTo(1);
+    }
+
+    @Test
+    void different_elements_are_both_counted_by_same_prefix() {
+        trie.add("hello");
+        trie.add("hexagram");
+
+        assertThat(trie.howManyStartsWithPrefix("h")).isEqualTo(2);
+        assertThat(trie.howManyStartsWithPrefix("he")).isEqualTo(2);
+    }
+
+    @Test
+    void after_removing_one_element_prefix_count_decreased_only_by_one() {
+        trie.add("hello");
+        trie.add("hexagram");
+        trie.remove("hello");
+
+        assertThat(trie.howManyStartsWithPrefix("h")).isEqualTo(1);
+        assertThat(trie.howManyStartsWithPrefix("he")).isEqualTo(1);
+    }
+
+    @Test
+    void prefix_count_correctly_works_for_branching() {
+        trie.add("hello");
+        trie.add("hell");
+        trie.add("helicopter");
+        trie.add("hero");
+        trie.add("horror");
+        trie.add("else");
+
+        assertThat(trie.size()).isEqualTo(6);
+        assertThat(trie.howManyStartsWithPrefix("h")).isEqualTo(5);
+        assertThat(trie.howManyStartsWithPrefix("he")).isEqualTo(4);
+        assertThat(trie.howManyStartsWithPrefix("hel")).isEqualTo(3);
+        assertThat(trie.howManyStartsWithPrefix("hell")).isEqualTo(2);
+        assertThat(trie.howManyStartsWithPrefix("hello")).isEqualTo(1);
+    }
+
+    @Test
+    void prefix_distinguish_between_upper_and_lower_case() {
+        trie.add("hello");
+        trie.add("Hello");
+
+        assertThat(trie.howManyStartsWithPrefix("H")).isEqualTo(1);
+        assertThat(trie.howManyStartsWithPrefix("h")).isEqualTo(1);
     }
 }

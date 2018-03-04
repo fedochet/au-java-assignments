@@ -34,7 +34,7 @@ public class NaiveTrie implements Trie {
     @Override
     public int howManyStartsWithPrefix(String prefix) {
         assertIsAlpbhabetic(prefix);
-        return 0;
+        return ((int) strings.stream().filter(s -> s.startsWith(prefix)).count());
     }
 
     private String assertIsAlpbhabetic(String element) {
