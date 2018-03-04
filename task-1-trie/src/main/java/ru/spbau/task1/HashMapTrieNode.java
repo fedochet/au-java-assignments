@@ -2,6 +2,7 @@ package ru.spbau.task1;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 class HashMapTrieNode implements TrieNode {
     private Map<Character, TrieNode> nextNodes = new HashMap<>();
@@ -21,15 +22,12 @@ class HashMapTrieNode implements TrieNode {
         }
 
         char currentChar = element.charAt(fromPosition);
-        boolean newNodesCreated = !nextNodes.containsKey(currentChar);
         TrieNode nextNode = nextNodes.computeIfAbsent(currentChar, c -> new HashMapTrieNode());
-        boolean addedInNextNodes = nextNode.add(element, fromPosition + 1);
-        boolean isAdded = newNodesCreated || addedInNextNodes;
-        if (isAdded) {
+        boolean added = nextNode.add(element, fromPosition + 1);
+        if (added) {
             size++;
         }
-        return isAdded;
-
+        return added;
     }
 
     @Override
@@ -39,8 +37,9 @@ class HashMapTrieNode implements TrieNode {
         }
 
         char currentChar = element.charAt(fromPosition);
-        return nextNodes.containsKey(currentChar)
-            && nextNodes.get(currentChar).contains(element, fromPosition + 1);
+        return getNextNode(currentChar)
+            .map(node -> node.contains(element, fromPosition + 1))
+            .orElse(false);
     }
 
     @Override
@@ -56,8 +55,9 @@ class HashMapTrieNode implements TrieNode {
         }
 
         char currentChar = element.charAt(fromPosition);
-        boolean isDeleted = nextNodes.containsKey(currentChar)
-            && nextNodes.get(currentChar).remove(element, fromPosition + 1);
+        boolean isDeleted = getNextNode(currentChar)
+            .map(node -> node.remove(element, fromPosition + 1))
+            .orElse(false);
 
         if (isDeleted) {
             size--;
@@ -81,10 +81,12 @@ class HashMapTrieNode implements TrieNode {
         }
 
         char currentChar = prefix.charAt(fromPosition);
-        if (nextNodes.containsKey(currentChar)) {
-            return nextNodes.get(currentChar).countByPrefix(prefix, fromPosition + 1);
-        } else {
-            return 0;
-        }
+        return getNextNode(currentChar)
+            .map(node -> node.countByPrefix(prefix, fromPosition + 1))
+            .orElse(0);
+    }
+
+    private Optional<TrieNode> getNextNode(char c) {
+        return Optional.ofNullable(nextNodes.get(c));
     }
 }
