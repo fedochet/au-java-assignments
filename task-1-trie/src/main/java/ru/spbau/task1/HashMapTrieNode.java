@@ -4,19 +4,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-class HashMapTrieNode implements TrieNode {
-    private Map<Character, TrieNode> nextNodes = new HashMap<>();
+class HashMapTrieNode {
+    private Map<Character, HashMapTrieNode> nextNodes = new HashMap<>();
     private boolean isTerminal = false;
     private int size = 0;
 
-    @Override
     public boolean add(String element, int fromPosition) {
         if (fromPosition >= element.length()) {
             return addWordToCurrentNode();
         }
 
         char currentChar = element.charAt(fromPosition);
-        TrieNode nextNode = getOrCreateNextNode(currentChar);
+        HashMapTrieNode nextNode = getOrCreateNextNode(currentChar);
         boolean added = nextNode.add(element, fromPosition + 1);
         if (added) {
             size++;
@@ -24,7 +23,6 @@ class HashMapTrieNode implements TrieNode {
         return added;
     }
 
-    @Override
     public boolean contains(String element, int fromPosition) {
         if (fromPosition >= element.length()) {
             return isTerminal;
@@ -36,7 +34,6 @@ class HashMapTrieNode implements TrieNode {
             .orElse(false);
     }
 
-    @Override
     public boolean remove(String element, int fromPosition) {
         if (fromPosition >= element.length()) {
             return removeWordFromCurrentNode();
@@ -55,12 +52,10 @@ class HashMapTrieNode implements TrieNode {
         return isDeleted;
     }
 
-    @Override
     public int size() {
         return size;
     }
 
-    @Override
     public int countByPrefix(String prefix, int fromPosition) {
         if (fromPosition >= prefix.length()) {
             return size;
@@ -98,11 +93,11 @@ class HashMapTrieNode implements TrieNode {
         }
     }
 
-    private Optional<TrieNode> getNextNode(char currentChar) {
+    private Optional<HashMapTrieNode> getNextNode(char currentChar) {
         return Optional.ofNullable(nextNodes.get(currentChar));
     }
 
-    private TrieNode getOrCreateNextNode(char currentChar) {
+    private HashMapTrieNode getOrCreateNextNode(char currentChar) {
         return nextNodes.computeIfAbsent(currentChar, c -> new HashMapTrieNode());
     }
 }
