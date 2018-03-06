@@ -7,7 +7,7 @@ public class HashMapTrie implements Trie {
 
     private static final Pattern IS_ALPHABETIC = Pattern.compile("[a-zA-Z]+");
 
-    private HashMapTrieNode trieNode = new HashMapTrieNode();
+    private final HashMapTrieNode trieNode = new HashMapTrieNode();
 
     @Override
     public boolean add(String element) {

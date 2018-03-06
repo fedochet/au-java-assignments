@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 
 class HashMapTrieNode {
-    private Map<Character, HashMapTrieNode> nextNodes = new HashMap<>();
+    private final Map<Character, HashMapTrieNode> nextNodes = new HashMap<>();
     private boolean isTerminal = false;
     private int size = 0;
 
