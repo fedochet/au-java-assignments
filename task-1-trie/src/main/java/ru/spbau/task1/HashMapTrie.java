@@ -35,8 +35,9 @@ public class HashMapTrie implements Trie {
     }
 
     private String assertIsAlpbhabetic(String element) {
-        if (!IS_ALPHABETIC.matcher(element).matches()) {
-            throw new IllegalArgumentException(MessageFormat.format("Cannot accept {0} because it is not alphabetic string.", element));
+        if (element == null || !IS_ALPHABETIC.matcher(element).matches()) {
+            throw new IllegalArgumentException(
+                MessageFormat.format("Cannot accept {0} because it is not alphabetic string.", element));
         }
 
         return element;

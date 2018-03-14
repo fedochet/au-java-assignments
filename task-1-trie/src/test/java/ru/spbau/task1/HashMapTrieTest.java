@@ -39,12 +39,20 @@ class HashMapTrieTest {
 
     @DisplayName("trie should not accept non-alphabetical element for addition")
     @ParameterizedTest
-    @ValueSource(strings = {"with space", "with.dot", "%%odd^&"})
+    @ValueSource(strings = {"", "with space", "with.dot", "%%odd^&"})
     void trie_does_not_accept_non_alphabetical_strings(String element) {
         assertThrows(IllegalArgumentException.class, () -> trie.add(element));
         assertThrows(IllegalArgumentException.class, () -> trie.contains(element));
         assertThrows(IllegalArgumentException.class, () -> trie.remove(element));
         assertThrows(IllegalArgumentException.class, () -> trie.howManyStartsWithPrefix(element));
+    }
+
+    @Test
+    void trie_does_not_accept_null() {
+        assertThrows(IllegalArgumentException.class, () -> trie.add(null));
+        assertThrows(IllegalArgumentException.class, () -> trie.contains(null));
+        assertThrows(IllegalArgumentException.class, () -> trie.remove(null));
+        assertThrows(IllegalArgumentException.class, () -> trie.howManyStartsWithPrefix(null));
     }
 
     @Test
