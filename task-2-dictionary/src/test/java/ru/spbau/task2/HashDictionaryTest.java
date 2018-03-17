@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class HashDictionaryTest {
 
-    private HashDictionary dictionary = new HashDictionary();
+    private HashDictionary<String, String> dictionary = new HashDictionary<>();
 
 
     @Test

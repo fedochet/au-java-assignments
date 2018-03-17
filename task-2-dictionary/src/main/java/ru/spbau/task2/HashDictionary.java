@@ -4,8 +4,8 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HashDictionary implements Dictionary {
-    private final Map<String, String> hashMap = new HashMap<>();
+public class HashDictionary<K, V> implements Dictionary<K, V> {
+    private final Map<K, V> hashMap = new HashMap<>();
 
     @Override
     public int size() {
@@ -13,24 +13,25 @@ public class HashDictionary implements Dictionary {
     }
 
     @Override
-    public boolean contains(@Nullable String key) {
+    public boolean contains(@Nullable K key) {
         return hashMap.containsKey(key);
     }
 
-    @Override
     @Nullable
-    public String get(@Nullable String key) {
+    @Override
+    public V get(@Nullable K key) {
         return hashMap.get(key);
     }
 
-    @Override
     @Nullable
-    public String put(@Nullable String key, @Nullable String value) {
+    @Override
+    public V put(@Nullable K key, @Nullable V value) {
         return hashMap.put(key, value);
     }
 
+    @Nullable
     @Override
-    public String remove(@Nullable String key) {
+    public V remove(@Nullable K key) {
         return hashMap.remove(key);
     }
 

@@ -2,7 +2,7 @@ package ru.spbau.task2;
 
 import javax.annotation.Nullable;
 
-public interface Dictionary {
+public interface Dictionary<K, V> {
 
     // хеш-таблица, использующая список
     // ключами и значениями выступают строки
@@ -12,24 +12,24 @@ public interface Dictionary {
     int size();
 
     // true, если такой ключ содержится в таблице
-    boolean contains(@Nullable String key);
+    boolean contains(@Nullable K key);
 
     // возвращает значение, хранимое по ключу key
     // если такого нет, возвращает null
     @Nullable
-    String get(@Nullable String key);
+    V get(@Nullable K key);
 
     // положить по ключу key значение value
     // и вернуть ранее хранимое, либо null;
     // провести рехеширование по необходимости
     @Nullable
-    String put(@Nullable String key, @Nullable String value);
+    V put(@Nullable K key, @Nullable V value);
 
     // забыть про пару key-value для переданного key
     // и вернуть забытое value, либо null, если такой пары не было;
     // провести рехеширование по необходимости
     @Nullable
-    String remove(@Nullable String key);
+    V remove(@Nullable K key);
 
     // забыть про все пары key-value
     void clear();
