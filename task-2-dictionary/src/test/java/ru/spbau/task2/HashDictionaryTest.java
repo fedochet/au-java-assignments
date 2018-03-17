@@ -139,4 +139,28 @@ class HashDictionaryTest {
         assertThat(dictionary.get("key2")).isEqualTo("value2");
         assertThat(dictionary.get("key3")).isEqualTo("value3");
     }
+
+    @Test
+    void different_keys_with_same_hash_are_stored_correctly() {
+        HashDictionary<Object, String> dict = new HashDictionary<>();
+
+        int hashCodeValue = 1;
+        Object key1 = objectWithHashCode(hashCodeValue);
+        Object key2 = objectWithHashCode(hashCodeValue);
+
+        dict.put(key1, "value1");
+        dict.put(key2, "value2");
+
+        assertThat(dict.get(key1)).isEqualTo("value1");
+        assertThat(dict.get(key2)).isEqualTo("value2");
+    }
+
+    private Object objectWithHashCode(int hashCodeValue) {
+        return new Object() {
+            @Override
+            public int hashCode() {
+                return hashCodeValue;
+            }
+        };
+    }
 }
