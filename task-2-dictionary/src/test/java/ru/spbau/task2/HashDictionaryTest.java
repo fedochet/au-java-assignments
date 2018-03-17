@@ -141,6 +141,22 @@ class HashDictionaryTest {
     }
 
     @Test
+    void dict_accepts_null_key() {
+        dictionary.put(null, "value");
+
+        assertThat(dictionary.get(null)).isEqualTo("value");
+        assertThat(dictionary.contains(null)).isTrue();
+    }
+
+    @Test
+    void dict_accepts_null_value() {
+        dictionary.put("key", null);
+
+        assertThat(dictionary.get("key")).isNull();
+        assertThat(dictionary.contains("key")).isTrue();
+    }
+
+    @Test
     void different_keys_with_same_hash_are_stored_correctly() {
         HashDictionary<Object, String> dict = new HashDictionary<>();
 
