@@ -80,7 +80,7 @@ class HashDictionaryBucket<K, V> {
         entries.add(new BucketEntry<>(key, value));
     }
 
-    private static class BucketEntry<K, V> {
+    static class BucketEntry<K, V> {
         @NotNull
         final K key;
 
