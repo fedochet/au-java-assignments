@@ -1,6 +1,6 @@
 package ru.spbau.task2;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public interface Dictionary<K, V> {
 
