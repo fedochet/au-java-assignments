@@ -56,6 +56,11 @@ class HashDictionaryBucket<K, V> {
         return null;
     }
 
+    @NotNull
+    List<BucketEntry<K, V>> getEntries() {
+        return entries;
+    }
+
     private void addNewEntry(@NotNull K key, @Nullable V value) {
         entries.add(new BucketEntry<>(key, value));
     }

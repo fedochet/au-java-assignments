@@ -20,8 +20,11 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
     private boolean containsNullEntry = false;
 
     public HashDictionary(int capacity, double loadFactor) {
+        assertParameters(capacity, loadFactor);
+
         BUCKETS_NUMBER = capacity;
         LOAD_FACTOR = loadFactor;
+
         createBuckets();
     }
 
@@ -30,7 +33,7 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
     }
 
     public HashDictionary() {
-        this(128);
+        this(16);
     }
 
     @Override
@@ -78,6 +81,10 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
         }
 
         size++;
+        if (size >= BUCKETS_NUMBER * LOAD_FACTOR) {
+            rehash();
+        }
+
         return null;
     }
 
@@ -101,14 +108,30 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
     @Override
     public void clear() {
         buckets.clear();
-        clearNullEntry();
+        removeNullEntry();
 
         size = 0;
 
         createBuckets();
     }
 
-    private void clearNullEntry() {
+    private void assertParameters(int capacity, double loadFactor) {
+        if (capacity <= 0) {
+            throw new IllegalArgumentException("Capacity should be positive; got " + capacity);
+        }
+
+        if (loadFactor <= 0) {
+            throw new IllegalArgumentException("Load factor should be positive; got " + loadFactor);
+        }
+    }
+
+    private void createBuckets() {
+        for (int i = 0; i < BUCKETS_NUMBER; i++) {
+            buckets.add(new HashDictionaryBucket<>());
+        }
+    }
+
+    private void removeNullEntry() {
         nullEntry = null;
         containsNullEntry = false;
     }
@@ -139,10 +162,18 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
         return value;
     }
 
-    private void createBuckets() {
-        for (int i = 0; i < BUCKETS_NUMBER; i++) {
-            buckets.add(new HashDictionaryBucket<>());
-        }
+    private void rehash() {
+        List<BucketEntry<K, V>> entries = new ArrayList<>();
+
+        buckets.forEach(bucket -> entries.addAll(bucket.getEntries()));
+
+        BUCKETS_NUMBER *= 2;
+        buckets.clear();
+        createBuckets();
+
+        size = containsNullEntry ? 1 : 0;
+
+        entries.forEach(entry -> put(entry.key, entry.value));
     }
 
     private HashDictionaryBucket<K, V> getBucketByKey(K key) {
@@ -167,10 +198,6 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
      */
     @TestOnly
     class InternalState {
-        int getBucketsNumber() {
-            return BUCKETS_NUMBER;
-        }
-
         List<HashDictionaryBucket<K, V>> getBuckets() {
             return buckets;
         }

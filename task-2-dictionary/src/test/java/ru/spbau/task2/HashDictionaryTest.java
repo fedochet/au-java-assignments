@@ -5,10 +5,33 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HashDictionaryTest {
 
     private HashDictionary<String, String> dictionary = new HashDictionary<>();
+
+    @Test
+    void constructor_does_not_accept_non_positive_capacity() {
+        assertThrows(IllegalArgumentException.class,
+            () -> new HashDictionary<>(-1)
+        );
+
+        assertThrows(IllegalArgumentException.class,
+            () -> new HashDictionary<>(0)
+        );
+    }
+
+    @Test
+    void constructor_does_not_accept_non_positive_loadFactor() {
+        assertThrows(IllegalArgumentException.class,
+            () -> new HashDictionary<>(1, 0)
+        );
+
+        assertThrows(IllegalArgumentException.class,
+            () -> new HashDictionary<>(1, -1)
+        );
+    }
 
     @Test
     void new_dictionary_has_zero_size() {
