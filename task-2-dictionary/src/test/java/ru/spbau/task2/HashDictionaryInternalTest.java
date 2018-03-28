@@ -28,10 +28,60 @@ class HashDictionaryInternalTest {
         dict.put(2, 2);
         dict.put(3, 3);
         dict.put(4, 4);
-
         dict.put(5, 5);
 
-        assertThat(dict.getInternalState().getBuckets())
-            .hasSize(capacity * 2);
+        assertThat(dict.getInternalState().getBuckets()).hasSize(capacity);
+
+        dict.put(6, 6);
+
+        assertThat(dict.getInternalState().getBuckets()).hasSize(capacity * 2);
+        assertThat(dict.size()).isEqualTo(6);
+    }
+
+    @Test
+    @DisplayName("Capacity is halved on removal when `capacity` * `loadFactor` is greater than `size` * 2")
+    void capacity_is_decreased_when_size_is_small() {
+        int capacity = 10;
+        double loadFactor = 0.8;
+        HashDictionary<Integer, Integer> dict = new HashDictionary<>(capacity, loadFactor);
+
+        dict.put(1, 1);
+        dict.put(2, 2);
+        dict.put(3, 3);
+        dict.put(4, 4);
+
+        assertThat(dict.getInternalState().getBuckets()).hasSize(capacity);
+
+        dict.remove(1);
+
+        assertThat(dict.getInternalState().getBuckets()).hasSize(capacity / 2);
+        assertThat(dict.size()).isEqualTo(3);
+    }
+
+    @Test
+    void no_rehashing_happens_on_inserting_by_null_key() {
+        int capacity = 3;
+        double loadFactor = 0.5;
+        HashDictionary<Integer, Integer> dict = new HashDictionary<>(capacity, loadFactor);
+
+        dict.put(1, 1);
+        dict.put(null, 1);
+
+        assertThat(dict.getInternalState().getBuckets()).hasSize(capacity);
+        assertThat(dict.size()).isEqualTo(2);
+    }
+
+    @Test
+    void no_rehashing_happend_on_deleting_by_null_key() {
+        int capacity = 8;
+        double loadFactor = 0.5;
+        HashDictionary<Integer, Integer> dict = new HashDictionary<>(capacity, loadFactor);
+
+        dict.put(1, 1);
+        dict.put(null, 2);
+        dict.remove(null);
+
+        assertThat(dict.getInternalState().getBuckets()).hasSize(8);
+        assertThat(dict.size()).isEqualTo(1);
     }
 }

@@ -9,6 +9,8 @@ import java.util.List;
 
 public class HashDictionary<K, V> implements Dictionary<K, V> {
 
+    private static final int EXPANSION_FACTOR = 2;
+
     private final double LOAD_FACTOR;
     private int BUCKETS_NUMBER;
     private int size = 0;
@@ -81,8 +83,8 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
         }
 
         size++;
-        if (size >= BUCKETS_NUMBER * LOAD_FACTOR) {
-            rehash();
+        if (size > BUCKETS_NUMBER * LOAD_FACTOR) {
+            expandUp();
         }
 
         return null;
@@ -97,12 +99,16 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
 
         BucketEntry<K, V> entry = getBucketByKey(key).remove(key);
 
-        if (entry != null) {
-            size--;
-            return entry.value;
+        if (entry == null) {
+            return null;
         }
 
-        return null;
+        size--;
+        if (EXPANSION_FACTOR * size < BUCKETS_NUMBER * LOAD_FACTOR) {
+            shrinkDown();
+        }
+
+        return entry.value;
     }
 
     @Override
@@ -162,16 +168,24 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
         return value;
     }
 
+    private void shrinkDown() {
+        BUCKETS_NUMBER /= EXPANSION_FACTOR;
+        size = containsNullEntry ? 1 : 0;
+        rehash();
+    }
+
+    private void expandUp() {
+        BUCKETS_NUMBER *= EXPANSION_FACTOR;
+        size = containsNullEntry ? 1 : 0;
+        rehash();
+    }
+
     private void rehash() {
         List<BucketEntry<K, V>> entries = new ArrayList<>();
-
         buckets.forEach(bucket -> entries.addAll(bucket.getEntries()));
 
-        BUCKETS_NUMBER *= 2;
         buckets.clear();
         createBuckets();
-
-        size = containsNullEntry ? 1 : 0;
 
         entries.forEach(entry -> put(entry.key, entry.value));
     }
@@ -193,17 +207,12 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
 
     /**
      * This class allows introspection of dictionary internal state.
-     *
      * For testing purposes only!
      */
     @TestOnly
     class InternalState {
         List<HashDictionaryBucket<K, V>> getBuckets() {
             return buckets;
-        }
-
-        HashDictionaryBucket<K, V> getBucketByKey(@NotNull K key) {
-            return HashDictionary.this.getBucketByKey(key);
         }
     }
 
