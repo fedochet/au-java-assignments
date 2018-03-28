@@ -30,10 +30,10 @@ class HashDictionaryBucket<K, V> {
     /**
      * Creates new entry with key and value. Does not check for duplicates.
      *
-     * @param key key for entry
+     * @param key   key for entry
      * @param value value for entry
      */
-    void insert(@NotNull K key, @Nullable V value)  {
+    void insert(@NotNull K key, @Nullable V value) {
         addNewEntry(key, value);
     }
 

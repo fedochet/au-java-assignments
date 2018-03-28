@@ -10,7 +10,6 @@ class HashDictionaryTest {
 
     private HashDictionary<String, String> dictionary = new HashDictionary<>();
 
-
     @Test
     void new_dictionary_has_zero_size() {
         assertThat(dictionary.size()).isEqualTo(0);
