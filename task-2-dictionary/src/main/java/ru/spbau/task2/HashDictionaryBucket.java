@@ -47,7 +47,7 @@ class HashDictionaryBucket<K, V> {
     BucketEntry<K, V> remove(@NotNull K key) {
         for (Iterator<BucketEntry<K, V>> iterator = entries.iterator(); iterator.hasNext(); ) {
             BucketEntry<K, V> entry = iterator.next();
-            if (entry.key == key) {
+            if (entry.key.equals(key)) {
                 iterator.remove();
                 return entry;
             }
