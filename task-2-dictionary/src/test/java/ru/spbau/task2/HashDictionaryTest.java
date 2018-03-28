@@ -1,5 +1,7 @@
 package ru.spbau.task2;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -98,23 +100,19 @@ class HashDictionaryTest {
         dictionary.put("key1", "value");
         dictionary.put("key2", "value");
         dictionary.put("key3", "value");
+        dictionary.put("key4", null);
+        dictionary.put(null, null);
 
         dictionary.clear();
 
         assertThat(dictionary.size()).isEqualTo(0);
-    }
-
-    @Test
-    void after_clear_dict_does_not_contain_any_element() {
-        dictionary.put("key1", "value");
-        dictionary.put("key2", "value");
-        dictionary.put("key3", "value");
-
-        dictionary.clear();
 
         assertThat(dictionary.contains("key1")).isFalse();
         assertThat(dictionary.contains("key2")).isFalse();
         assertThat(dictionary.contains("key3")).isFalse();
+        assertThat(dictionary.contains("key4")).isFalse();
+        assertThat(dictionary.contains(null)).isFalse();
+
     }
 
     @Test
@@ -140,20 +138,55 @@ class HashDictionaryTest {
         assertThat(dictionary.get("key3")).isEqualTo("value3");
     }
 
-    @Test
-    void dict_accepts_null_key() {
-        dictionary.put(null, "value");
+    @Nested
+    @DisplayName("Tests for correct work with null keys and values")
+    class NullKeyAndValueTests {
+        @Test
+        void dict_accepts_null_key() {
+            dictionary.put(null, "value");
 
-        assertThat(dictionary.get(null)).isEqualTo("value");
-        assertThat(dictionary.contains(null)).isTrue();
-    }
+            assertThat(dictionary.get(null)).isEqualTo("value");
+            assertThat(dictionary.contains(null)).isTrue();
+            assertThat(dictionary.size()).isEqualTo(1);
+        }
 
-    @Test
-    void dict_accepts_null_value() {
-        dictionary.put("key", null);
+        @Test
+        void dict_accepts_null_value() {
+            dictionary.put("key", null);
 
-        assertThat(dictionary.get("key")).isNull();
-        assertThat(dictionary.contains("key")).isTrue();
+            assertThat(dictionary.get("key")).isNull();
+            assertThat(dictionary.contains("key")).isTrue();
+            assertThat(dictionary.size()).isEqualTo(1);
+        }
+
+        @Test
+        void dict_accepts_null_key_and_value() {
+            dictionary.put(null, null);
+
+            assertThat(dictionary.get(null)).isNull();
+            assertThat(dictionary.contains(null)).isTrue();
+            assertThat(dictionary.size()).isEqualTo(1);
+        }
+
+        @Test
+        void inserting_by_null_key_again_overwrites_value() {
+            dictionary.put(null, "value1");
+
+            String oldValue = dictionary.put(null, "value2");
+
+            assertThat(oldValue).isEqualTo("value1");
+            assertThat(dictionary.get(null)).isEqualTo("value2");
+            assertThat(dictionary.contains(null)).isTrue();
+        }
+
+        @Test
+        void removing_by_null_key_works() {
+            dictionary.put(null, "value");
+
+            assertThat(dictionary.remove(null)).isEqualTo("value");
+            assertThat(dictionary.contains(null)).isFalse();
+            assertThat(dictionary.size()).isEqualTo(0);
+        }
     }
 
     @Test
