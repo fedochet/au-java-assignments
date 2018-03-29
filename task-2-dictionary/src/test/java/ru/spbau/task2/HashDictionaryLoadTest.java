@@ -1,5 +1,6 @@
 package ru.spbau.task2;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +12,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * This set of test aim to check that {@link HashDictionary} works fine on big amount of data thrown at it.
+ *
+ * Tests here are extremely ugly.
  */
 class HashDictionaryLoadTest {
     /**
@@ -83,8 +86,45 @@ class HashDictionaryLoadTest {
         }
     }
 
+    @Test
+    void insertions_and_deletes_on_bad_objects() {
+        int badObjectsHashesNumber = 32;
+
+        Dictionary<Object, Integer> dict = new HashDictionary<>();
+        HashMap<Object, Integer> jdkDict = new HashMap<>();
+
+        for (int i = 0; i < 128; i++) {
+            System.out.println("Iteration " + i);
+            for (int j = 0; j < 128; j++) {
+                if (j % 5 == 0) {
+                    Object key = getRandomElement(jdkDict.keySet());
+
+                    Integer removed = dict.remove(key);
+                    Integer jdkRemoved = jdkDict.remove(key);
+
+                    assertThat(removed).isEqualTo(jdkRemoved);
+                } else {
+                    Object key = createBadObject(badObjectsHashesNumber);
+                    int value = RANDOM.nextInt();
+
+                    Integer dictPut = dict.put(key, value);
+                    Integer jdkDictPut = jdkDict.put(key, value);
+
+                    assertThat(dictPut).isEqualTo(jdkDictPut);
+                }
+            }
+
+            jdkDict.forEach((k, v) -> {
+                assertThat(dict.contains(k)).isTrue();
+                assertThat(dict.get(k)).isEqualTo(v);
+            });
+
+            assertThat(jdkDict).hasSize(dict.size());
+        }
+    }
+
     @Nullable
-    private Integer getRandomElement(Set<Integer> integers) {
+    private <T> T getRandomElement(Set<T> integers) {
         if (integers.isEmpty()) {
             return null;
         }
@@ -94,4 +134,16 @@ class HashDictionaryLoadTest {
             .findFirst()
             .orElse(null);
     }
+
+    @NotNull
+    private Object createBadObject(int bound) {
+        int hashCode = RANDOM.nextInt(bound);
+        return new Object() {
+            @Override
+            public int hashCode() {
+                return hashCode;
+            }
+        };
+    }
+
 }
