@@ -94,7 +94,6 @@ class HashDictionaryLoadTest {
         HashMap<Object, Integer> jdkDict = new HashMap<>();
 
         for (int i = 0; i < 128; i++) {
-            System.out.println("Iteration " + i);
             for (int j = 0; j < 128; j++) {
                 if (j % 5 == 0) {
                     Object key = getRandomElement(jdkDict.keySet());
