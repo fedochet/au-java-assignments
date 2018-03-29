@@ -59,6 +59,7 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
         }
 
         BucketEntry<K, V> entry = getBucketByKey(key).find(key);
+
         if (entry != null) {
             return entry.value;
         }
@@ -103,7 +104,7 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
         }
 
         size--;
-        if (EXPANSION_FACTOR * size < BUCKETS_NUMBER * LOAD_FACTOR) {
+        if (EXPANSION_FACTOR * size < BUCKETS_NUMBER * LOAD_FACTOR && BUCKETS_NUMBER > 1) {
             shrinkDown();
         }
 

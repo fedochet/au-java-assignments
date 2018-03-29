@@ -72,7 +72,7 @@ class HashDictionaryInternalTest {
     }
 
     @Test
-    void no_rehashing_happend_on_deleting_by_null_key() {
+    void no_rehashing_happens_on_deleting_by_null_key() {
         int capacity = 8;
         double loadFactor = 0.5;
         HashDictionary<Integer, Integer> dict = new HashDictionary<>(capacity, loadFactor);
@@ -82,6 +82,20 @@ class HashDictionaryInternalTest {
         dict.remove(null);
 
         assertThat(dict.getInternalState().getBuckets()).hasSize(8);
+        assertThat(dict.size()).isEqualTo(1);
+    }
+
+    @Test
+    void no_rehashing_happens_on_deletion_if_capacity_is_one() {
+        int capacity = 1;
+        double loadFactor = 4;
+        HashDictionary<Integer, Integer> dict = new HashDictionary<>(capacity, loadFactor);
+
+        dict.put(1,1);
+        dict.put(2,2);
+        dict.remove(1);
+
+        assertThat(dict.getInternalState().getBuckets()).hasSize(1);
         assertThat(dict.size()).isEqualTo(1);
     }
 }
