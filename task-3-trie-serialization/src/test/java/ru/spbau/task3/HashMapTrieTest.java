@@ -1,4 +1,4 @@
-package ru.spbau.task2;
+package ru.spbau.task3;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

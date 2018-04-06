@@ -1,4 +1,4 @@
-package ru.spbau.task2;
+package ru.spbau.task3;
 
 import java.text.MessageFormat;
 import java.util.regex.Pattern;
