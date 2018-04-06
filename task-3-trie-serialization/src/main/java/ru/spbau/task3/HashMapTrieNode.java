@@ -1,13 +1,11 @@
 package ru.spbau.task3;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-class HashMapTrieNode {
+class HashMapTrieNode implements StreamSerializable {
     private final Map<Character, HashMapTrieNode> nextNodes = new HashMap<>();
     private boolean isTerminal = false;
     private int size = 0;
@@ -70,6 +68,45 @@ class HashMapTrieNode {
             .orElse(0);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
+        HashMapTrieNode that = (HashMapTrieNode) obj;
+        return (size == that.size)
+            && (isTerminal == that.isTerminal)
+            && nextNodes.equals(that.nextNodes);
+    }
+
+    @Override
+    public void serialize(OutputStream out) throws IOException {
+        DataOutputStream dataOutputStream = getDataOutputStream(out);
+        dataOutputStream.writeInt(size);
+        dataOutputStream.writeBoolean(isTerminal);
+
+        serializeNextNodes(dataOutputStream, nextNodes);
+    }
+
+    @Override
+    public void deserialize(InputStream in) throws IOException {
+        DataInputStream dataOutputStream = getDataInputStream(in);
+        int newSize = dataOutputStream.readInt();
+        boolean newIsTerminal = dataOutputStream.readBoolean();
+
+        Map<Character, HashMapTrieNode> newNextNodes = deserializeNextNodes(dataOutputStream);
+
+        nextNodes.clear();
+        nextNodes.putAll(newNextNodes);
+        isTerminal = newIsTerminal;
+        size = newSize;
+    }
+
     private boolean addWordToCurrentNode() {
         if (isTerminal) {
             return false;
@@ -104,20 +141,42 @@ class HashMapTrieNode {
         return nextNodes.computeIfAbsent(currentChar, c -> new HashMapTrieNode());
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
+    private DataOutputStream getDataOutputStream(OutputStream out) {
+        if (out instanceof DataOutputStream) {
+            return (DataOutputStream) out;
         }
 
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-
-        HashMapTrieNode that = (HashMapTrieNode) obj;
-        return (size == that.size)
-            && (isTerminal == that.isTerminal)
-            && nextNodes.equals(that.nextNodes);
+        return new DataOutputStream(out);
     }
 
+    private DataInputStream getDataInputStream(InputStream in) {
+        if (in instanceof DataInputStream) {
+            return (DataInputStream) in;
+        }
+
+        return new DataInputStream(in);
+    }
+
+    private void serializeNextNodes(DataOutputStream dataOutputStream,
+                                    Map<Character, HashMapTrieNode> map) throws IOException {
+        dataOutputStream.writeInt(map.size());
+        for (Map.Entry<Character, HashMapTrieNode> entry : this.nextNodes.entrySet()) {
+            dataOutputStream.writeChar(entry.getKey());
+            entry.getValue().serialize(dataOutputStream);
+        }
+    }
+
+    private Map<Character, HashMapTrieNode> deserializeNextNodes(DataInputStream dataOutputStream) throws IOException {
+        int dictSize = dataOutputStream.readInt();
+        Map<Character, HashMapTrieNode> map = new HashMap<>();
+
+        for (int i = 0; i < dictSize; i++) {
+            char key = dataOutputStream.readChar();
+            HashMapTrieNode value = new HashMapTrieNode();
+            value.deserialize(dataOutputStream);
+            map.put(key, value);
+        }
+
+        return map;
+    }
 }

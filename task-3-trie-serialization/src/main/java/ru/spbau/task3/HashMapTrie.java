@@ -62,12 +62,12 @@ public class HashMapTrie implements Trie, StreamSerializable {
     }
 
     @Override
-    public void serialize(OutputStream out) {
-
+    public void serialize(OutputStream out) throws IOException {
+        trieNode.serialize(out);
     }
 
     @Override
-    public void deserialize(InputStream in) {
-
+    public void deserialize(InputStream in) throws IOException {
+        trieNode.deserialize(in);
     }
 }
