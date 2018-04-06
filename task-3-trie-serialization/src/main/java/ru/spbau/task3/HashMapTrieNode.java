@@ -1,10 +1,13 @@
 package ru.spbau.task3;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-class HashMapTrieNode {
+class HashMapTrieNode implements StreamSerializable {
     private final Map<Character, HashMapTrieNode> nextNodes = new HashMap<>();
     private boolean isTerminal = false;
     private int size = 0;
@@ -99,5 +102,15 @@ class HashMapTrieNode {
 
     private HashMapTrieNode getOrCreateNextNode(char currentChar) {
         return nextNodes.computeIfAbsent(currentChar, c -> new HashMapTrieNode());
+    }
+
+    @Override
+    public void serialize(OutputStream out) throws IOException {
+
+    }
+
+    @Override
+    public void deserialize(InputStream in) throws IOException {
+
     }
 }
