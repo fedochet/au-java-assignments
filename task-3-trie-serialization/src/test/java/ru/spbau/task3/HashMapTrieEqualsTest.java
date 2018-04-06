@@ -1,5 +1,7 @@
 package ru.spbau.task3;
 
+import org.assertj.core.api.Condition;
+import org.assertj.core.util.Objects;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -27,8 +29,7 @@ class HashMapTrieEqualsTest {
         HashMapTrie trie1 = new HashMapTrie();
         HashMapTrie trie2 = new HashMapTrie();
 
-        assertThat(trie1).isEqualTo(trie2);
-        assertThat(trie2).isEqualTo(trie1);
+        assertThat(trie1).is(symmeticallyEqualTo(trie2));
     }
 
     @Test
@@ -42,8 +43,7 @@ class HashMapTrieEqualsTest {
             trie2.add(word);
         });
 
-        assertThat(trie1).isEqualTo(trie2);
-        assertThat(trie2).isEqualTo(trie1);
+        assertThat(trie1).is(symmeticallyEqualTo(trie2));
     }
 
     @Test
@@ -56,8 +56,7 @@ class HashMapTrieEqualsTest {
         words1.forEach(trie1::add);
         words2.forEach(trie2::add);
 
-        assertThat(trie1).isNotEqualTo(trie2);
-        assertThat(trie2).isNotEqualTo(trie1);
+        assertThat(trie1).isNot(symmeticallyEqualTo(trie2));
     }
 
     @Test
@@ -70,8 +69,7 @@ class HashMapTrieEqualsTest {
         words1.forEach(trie1::add);
         words2.forEach(trie2::add);
 
-        assertThat(trie1).isNotEqualTo(trie2);
-        assertThat(trie2).isNotEqualTo(trie1);
+        assertThat(trie1).isNot(symmeticallyEqualTo(trie2));
     }
 
     @Test
@@ -83,17 +81,22 @@ class HashMapTrieEqualsTest {
         words.forEach(trie1::add);
         words.forEach(trie2::add);
 
-        assertThat(trie1).isEqualTo(trie2);
-        assertThat(trie2).isEqualTo(trie1);
+        assertThat(trie1).is(symmeticallyEqualTo(trie2));
 
         trie1.add("four");
 
-        assertThat(trie1).isNotEqualTo(trie2);
-        assertThat(trie2).isNotEqualTo(trie1);
+        assertThat(trie1).isNot(symmeticallyEqualTo(trie2));
 
         trie2.add("four");
 
-        assertThat(trie1).isEqualTo(trie2);
-        assertThat(trie2).isEqualTo(trie1);
+        assertThat(trie1).is(symmeticallyEqualTo(trie2));
+    }
+
+    private <T> Condition<? super T> symmeticallyEqualTo(T right) {
+        return new Condition<>(
+            left -> Objects.areEqual(left, right) && Objects.areEqual(right, left),
+            "symmetrically equal to %s",
+            right
+        );
     }
 }
