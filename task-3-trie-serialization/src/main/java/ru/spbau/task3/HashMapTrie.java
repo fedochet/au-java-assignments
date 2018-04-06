@@ -43,4 +43,18 @@ public class HashMapTrie implements Trie {
         return element;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
+        HashMapTrie that = (HashMapTrie) obj;
+
+        return trieNode.equals(that.trieNode);
+    }
 }

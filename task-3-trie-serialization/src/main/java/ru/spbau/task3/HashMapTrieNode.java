@@ -113,4 +113,21 @@ class HashMapTrieNode implements StreamSerializable {
     public void deserialize(InputStream in) throws IOException {
 
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
+        HashMapTrieNode that = (HashMapTrieNode) obj;
+        return (size == that.size)
+            && (isTerminal == that.isTerminal)
+            && nextNodes.equals(that.nextNodes);
+    }
+
 }
