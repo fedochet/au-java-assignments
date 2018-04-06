@@ -37,7 +37,7 @@ class HashMapTrieTest {
         }
     }
 
-    @DisplayName("trie should not accept non-alphabetical element for addition")
+    @DisplayName("deserializedTree should not accept non-alphabetical element for addition")
     @ParameterizedTest
     @ValueSource(strings = {"", "with space", "with.dot", "%%odd^&"})
     void trie_does_not_accept_non_alphabetical_strings(String element) {
@@ -140,7 +140,7 @@ class HashMapTrieTest {
 
         assertThat(trie.remove("hello")).isTrue();
         assertThat(trie.size()).isEqualTo(1);
-        assertThat(trie.contains("helloween"));
+        assertThat(trie.contains("helloween")).isTrue();
         assertThat(trie.contains("hello")).isFalse();
     }
 
@@ -150,7 +150,7 @@ class HashMapTrieTest {
 
         assertThat(trie.remove("hello")).isFalse();
         assertThat(trie.size()).isEqualTo(1);
-        assertThat(trie.contains("helloween"));
+        assertThat(trie.contains("helloween")).isTrue();
     }
 
     @Test

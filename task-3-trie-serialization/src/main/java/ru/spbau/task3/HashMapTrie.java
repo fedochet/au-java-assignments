@@ -1,9 +1,12 @@
 package ru.spbau.task3;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.util.regex.Pattern;
 
-public class HashMapTrie implements Trie {
+public class HashMapTrie implements Trie, StreamSerializable {
 
     private static final Pattern IS_ALPHABETIC = Pattern.compile("[a-zA-Z]+");
 
@@ -56,5 +59,15 @@ public class HashMapTrie implements Trie {
         HashMapTrie that = (HashMapTrie) obj;
 
         return trieNode.equals(that.trieNode);
+    }
+
+    @Override
+    public void serialize(OutputStream out) {
+
+    }
+
+    @Override
+    public void deserialize(InputStream in) {
+
     }
 }
