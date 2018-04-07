@@ -1,5 +1,8 @@
 package ru.spbau.task3;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,7 +72,7 @@ class HashMapTrieNode implements StreamSerializable {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) {
             return true;
         }
@@ -85,7 +88,7 @@ class HashMapTrieNode implements StreamSerializable {
     }
 
     @Override
-    public void serialize(OutputStream out) throws IOException {
+    public void serialize(@NotNull OutputStream out) throws IOException {
         DataOutputStream dataOutputStream = getDataOutputStream(out);
         dataOutputStream.writeInt(size);
         dataOutputStream.writeBoolean(isTerminal);
@@ -94,7 +97,7 @@ class HashMapTrieNode implements StreamSerializable {
     }
 
     @Override
-    public void deserialize(InputStream in) throws IOException {
+    public void deserialize(@NotNull InputStream in) throws IOException {
         DataInputStream dataOutputStream = getDataInputStream(in);
         int newSize = dataOutputStream.readInt();
         boolean newIsTerminal = dataOutputStream.readBoolean();

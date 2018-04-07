@@ -73,6 +73,17 @@ class HashMapTrieSerializationTest {
         assertThat(deserializedTree).isEqualTo(trieWithWords(wordsInDeserialized));
     }
 
+    @Test
+    void exception_is_thrown_when_null_is_passed() {
+        assertThrows(NullPointerException.class,
+            () -> originalTree.serialize(null)
+        );
+
+        assertThrows(NullPointerException.class,
+            () -> deserializedTree.deserialize(null)
+        );
+    }
+
     private HashMapTrie trieWithWords(List<String> wordsInDeserialized) {
         HashMapTrie expectedTrie = new HashMapTrie();
         wordsInDeserialized.forEach(expectedTrie::add);

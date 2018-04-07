@@ -20,6 +20,8 @@ test {
 }
 
 dependencies {
+    compile group: 'org.jetbrains', name: 'annotations', version: '13.0'
+
     testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.1.0'
     testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.1.0'
     testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.1.0'

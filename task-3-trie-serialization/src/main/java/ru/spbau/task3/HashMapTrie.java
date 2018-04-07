@@ -1,9 +1,13 @@
 package ru.spbau.task3;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.MessageFormat;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class HashMapTrie implements Trie, StreamSerializable {
@@ -13,17 +17,17 @@ public class HashMapTrie implements Trie, StreamSerializable {
     private final HashMapTrieNode trieNode = new HashMapTrieNode();
 
     @Override
-    public boolean add(String element) {
+    public boolean add(@NotNull String element) {
         return trieNode.add(assertIsAlpbhabetic(element), 0);
     }
 
     @Override
-    public boolean contains(String element) {
+    public boolean contains(@NotNull String element) {
         return trieNode.contains(assertIsAlpbhabetic(element), 0);
     }
 
     @Override
-    public boolean remove(String element) {
+    public boolean remove(@NotNull String element) {
         return trieNode.remove(assertIsAlpbhabetic(element), 0);
     }
 
@@ -33,7 +37,7 @@ public class HashMapTrie implements Trie, StreamSerializable {
     }
 
     @Override
-    public int howManyStartsWithPrefix(String prefix) {
+    public int howManyStartsWithPrefix(@NotNull String prefix) {
         return trieNode.countByPrefix(assertIsAlpbhabetic(prefix), 0);
     }
 
@@ -47,7 +51,7 @@ public class HashMapTrie implements Trie, StreamSerializable {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) {
             return true;
         }
@@ -62,12 +66,14 @@ public class HashMapTrie implements Trie, StreamSerializable {
     }
 
     @Override
-    public void serialize(OutputStream out) throws IOException {
+    public void serialize(@NotNull OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "Output stream cannot be null.");
         trieNode.serialize(out);
     }
 
     @Override
-    public void deserialize(InputStream in) throws IOException {
+    public void deserialize(@NotNull InputStream in) throws IOException {
+        Objects.requireNonNull(in, "Input stream cannot be null.");
         trieNode.deserialize(in);
     }
 }
