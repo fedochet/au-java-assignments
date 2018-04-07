@@ -1,5 +1,6 @@
 package ru.spbau.task3;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +21,11 @@ class HashMapTrieSerializationTest {
     void createPipe() throws IOException {
         inputStream = new PipedInputStream();
         outputStream = new PipedOutputStream(inputStream);
+    }
+
+    @AfterEach
+    void closePipe() throws IOException {
+        outputStream.close();
     }
 
     @Test
