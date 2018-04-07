@@ -3,13 +3,12 @@ package ru.spbau.task3;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HashMapTrieSerializationTest {
     private HashMapTrie originalTree = new HashMapTrie();
@@ -50,5 +49,33 @@ class HashMapTrieSerializationTest {
         deserializedTree.deserialize(inputStream);
 
         assertThat(deserializedTree).isEqualTo(originalTree);
+    }
+
+    @Test
+    void if_exception_is_thrown_then_deserializable_trie_is_not_changed() throws IOException {
+        List<String> words = Arrays.asList("hello", "world", "one", "two", "three", "four");
+        List<String> wordsInDeserialized = Arrays.asList("other", "words", "from", "deserialized", "trie");
+
+        words.forEach(originalTree::add);
+        wordsInDeserialized.forEach(deserializedTree::add);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        originalTree.serialize(outputStream);
+
+        ByteArrayInputStream brokenInputStream =
+            new ByteArrayInputStream(outputStream.toByteArray(), 0, outputStream.size() / 2);
+
+        assertThrows(
+            IOException.class,
+            () -> deserializedTree.deserialize(brokenInputStream)
+        );
+
+        assertThat(deserializedTree).isEqualTo(trieWithWords(wordsInDeserialized));
+    }
+
+    private HashMapTrie trieWithWords(List<String> wordsInDeserialized) {
+        HashMapTrie expectedTrie = new HashMapTrie();
+        wordsInDeserialized.forEach(expectedTrie::add);
+        return expectedTrie;
     }
 }
