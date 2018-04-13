@@ -2,9 +2,8 @@ package ru.spbau.task4;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.function.Function;
-
 import static org.assertj.core.api.Assertions.*;
+import static ru.spbau.task4.FunctionUtils.*;
 
 class Function1Test {
 
@@ -25,12 +24,4 @@ class Function1Test {
         assertThat(lengthToString.apply("hello world")).isEqualTo("11");
     }
 
-    private <T, V> Function1<T, V> createFunction1(Function<T, V> f) {
-        return new Function1<T, V>() {
-            @Override
-            public V apply(T arg) {
-                return f.apply(arg);
-            }
-        };
-    }
 }
