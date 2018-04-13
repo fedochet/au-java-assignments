@@ -10,4 +10,22 @@ public abstract class Function2<T1, T2, M> {
             }
         };
     }
+
+    public Function1<T2, M> bind1(T1 arg1) {
+        return new Function1<T2, M>() {
+            @Override
+            public M apply(T2 arg2) {
+                return Function2.this.apply(arg1, arg2);
+            }
+        };
+    }
+
+    public Function1<T1, M> bind2(T2 arg2) {
+        return new Function1<T1, M>() {
+            @Override
+            public M apply(T1 arg1) {
+                return Function2.this.apply(arg1, arg2);
+            }
+        };
+    }
 }

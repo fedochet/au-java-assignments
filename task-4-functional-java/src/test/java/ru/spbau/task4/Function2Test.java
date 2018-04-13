@@ -23,4 +23,23 @@ class Function2Test {
 
         assertThat(concatAndReverse.apply("abc", "def")).isEqualTo("fedcba");
     }
+
+    @Test
+    void first_argument_can_be_binded() {
+        Function2<Integer, Integer, Double> pow = createFunction2((a, b) -> Math.pow(a, b));
+
+        Function1<Integer, Double> powOfTwo = pow.bind1(2);
+
+        assertThat(powOfTwo.apply(10)).isEqualTo(Math.pow(2, 10));
+    }
+
+    @Test
+    void second_argument_can_be_binded() {
+        Function2<Integer, Integer, Double> pow = createFunction2((a, b) -> Math.pow(a, b));
+
+        Function1<Integer, Double> square = pow.bind2(2);
+
+        assertThat(square.apply(10)).isEqualTo(Math.pow(10, 2));
+    }
+
 }
