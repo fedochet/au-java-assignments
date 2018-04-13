@@ -2,8 +2,11 @@ package ru.spbau.task4;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 import static org.assertj.core.api.Assertions.*;
 import static ru.spbau.task4.FunctionUtils.*;
+import static ru.spbau.task4.PredicateTest.TestEnum.*;
 
 class PredicateTest {
 
@@ -61,6 +64,27 @@ class PredicateTest {
 
         assertThat(fooSomethingBoo.apply("other")).isFalse();
         assertThat(fooSomethingBooRev.apply("other")).isFalse();
+    }
 
+    @Test
+    void negation_of_predicate_works() {
+        Predicate<Integer> isPositive = createPredicate(i -> i > 0);
+
+        Predicate<Integer> negativeOrZero = isPositive.not();
+
+        assertThat(negativeOrZero.apply(10)).isFalse();
+        assertThat(negativeOrZero.apply(0)).isTrue();
+        assertThat(negativeOrZero.apply(-10)).isTrue();
+    }
+
+    enum TestEnum { ONE, TWO, THREE }
+
+    @Test
+    void constant_functions_return_constants() {
+        Predicate<TestEnum> alwaysFalse = Predicate.constFalse();
+        Predicate<TestEnum> alwaysTrue = Predicate.constTrue();
+
+        assertThat(Arrays.asList(ONE, TWO, THREE, null)).allMatch(alwaysTrue::apply);
+        assertThat(Arrays.asList(ONE, TWO, THREE, null)).noneMatch(alwaysFalse::apply);
     }
 }
