@@ -4,7 +4,7 @@ import java.util.Objects;
 
 public abstract class Function2<T1, T2, M> {
     public abstract M apply(T1 arg1, T2 arg2);
-    public final <A> Function2<T1, T2, A> compose(Function1<M, A> other) {
+    public final <A> Function2<T1, T2, A> compose(Function1<? super M, ? extends A> other) {
         Objects.requireNonNull(other, "Cannot compose with null function!");
 
         return new Function2<T1, T2, A>() {

@@ -1,5 +1,6 @@
 package ru.spbau.task4;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.stream.Collectors;
@@ -58,6 +59,28 @@ class Function2Test {
         assertThat(curried.apply(2).apply("str")).isEqualTo("strstr");
         assertThat(tripleString.apply("a")).isEqualTo("aaa");
         assertThat(tripleString.apply("b")).isEqualTo("bbb");
+    }
+
+    @Test
+    @DisplayName("composition works with function that takes wider argument")
+    void composition_works_with_wider_argument_type() {
+        Function2<Integer, Integer, Integer> add = createFunction2((i, j) -> i + j);
+        Function1<Object, String> toString = createFunction1(Object::toString);
+
+        Function2<Integer, Integer, String> addAndConvertToString = add.compose(toString);
+
+        assertThat(addAndConvertToString.apply(1, 2)).isEqualTo("3");
+    }
+
+    @Test
+    @DisplayName("composition works with function that returns more narrow type")
+    void composition_works_with_narrower_return_type() {
+        Function2<Integer, Integer, Integer> add = createFunction2((i, j) -> i + j);
+        Function1<Integer, String> intToString = createFunction1(Object::toString);
+
+        Function2<Integer, Integer, Object> addAndConvertToObject = add.compose(intToString);
+
+        assertThat(addAndConvertToObject.apply(1, 2)).isEqualTo("3");
     }
 
     @Test
