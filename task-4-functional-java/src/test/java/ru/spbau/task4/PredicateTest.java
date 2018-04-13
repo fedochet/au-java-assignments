@@ -1,5 +1,6 @@
 package ru.spbau.task4;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -83,6 +84,24 @@ class PredicateTest {
         Predicate<String> trueAndFalse = stringPredicate.and(objectPredicate);
 
         assertThat(trueAndFalse.apply(null)).isFalse();
+    }
+
+    @Test
+    void OR_does_not_accept_null() {
+        Predicate<?> p = Predicate.constTrue();
+
+        Assertions.assertThrows(NullPointerException.class,
+            () -> p.or(null)
+        );
+    }
+
+    @Test
+    void AND_does_not_accept_null() {
+        Predicate<?> p = Predicate.constFalse();
+
+        Assertions.assertThrows(NullPointerException.class,
+            () -> p.and(null)
+        );
     }
 
     @Test

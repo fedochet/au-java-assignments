@@ -1,5 +1,7 @@
 package ru.spbau.task4;
 
+import java.util.Objects;
+
 public interface Predicate<T> extends Function1<T, Boolean> {
 
     //private
@@ -9,10 +11,14 @@ public interface Predicate<T> extends Function1<T, Boolean> {
     Predicate<?> ALWAYS_FALSE = ALWAYS_TRUE.not();
 
     default Predicate<T> or(Predicate<? super T> other) {
+        Objects.requireNonNull(other, "OR does not accept null predicates!");
+
         return arg -> apply(arg) || other.apply(arg);
     }
 
     default Predicate<T> and(Predicate<? super T> other) {
+        Objects.requireNonNull(other, "AND does not accept null predicates!");
+
         return arg -> apply(arg) && other.apply(arg);
     }
 
