@@ -67,6 +67,26 @@ class PredicateTest {
     }
 
     @Test
+    void OR_can_take_predicate_with_wider_type() {
+        Predicate<Object> objectPredicate = Predicate.constFalse();
+        Predicate<String> stringPredicate = Predicate.constTrue();
+
+        Predicate<String> trueOrFalse = stringPredicate.or(objectPredicate);
+
+        assertThat(trueOrFalse.apply(null)).isTrue();
+    }
+
+    @Test
+    void AND_can_take_predicate_with_wider_type() {
+        Predicate<Object> objectPredicate = Predicate.constFalse();
+        Predicate<String> stringPredicate = Predicate.constTrue();
+
+        Predicate<String> trueAndFalse = stringPredicate.and(objectPredicate);
+
+        assertThat(trueAndFalse.apply(null)).isFalse();
+    }
+
+    @Test
     void negation_of_predicate_works() {
         Predicate<Integer> isPositive = createPredicate(i -> i > 0);
 

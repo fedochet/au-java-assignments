@@ -11,7 +11,7 @@ public abstract class Predicate<T> extends Function1<T, Boolean> {
 
     private static final Predicate<?> ALWAYS_FALSE = ALWAYS_TRUE.not();
 
-    public final Predicate<T> or(Predicate<T> other) {
+    public final Predicate<T> or(Predicate<? super T> other) {
         Predicate<T> that = this;
         return new Predicate<T>() {
             @Override
@@ -21,7 +21,7 @@ public abstract class Predicate<T> extends Function1<T, Boolean> {
         };
     }
 
-    public final Predicate<T> and(Predicate<T> other) {
+    public final Predicate<T> and(Predicate<? super T> other) {
         Predicate<T> that = this;
         return new Predicate<T>() {
             @Override
