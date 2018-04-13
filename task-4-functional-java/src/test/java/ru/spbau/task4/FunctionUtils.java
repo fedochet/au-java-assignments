@@ -21,4 +21,13 @@ final class FunctionUtils {
             }
         };
     }
+
+    static <T> Predicate<T> createPredicate(java.util.function.Predicate<T> p) {
+        return new Predicate<T>() {
+            @Override
+            public Boolean apply(T arg) {
+                return p.test(arg);
+            }
+        };
+    }
 }
