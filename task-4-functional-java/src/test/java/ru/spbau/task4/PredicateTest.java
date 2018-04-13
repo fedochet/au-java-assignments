@@ -5,14 +5,13 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.*;
-import static ru.spbau.task4.FunctionUtils.*;
 import static ru.spbau.task4.PredicateTest.TestEnum.*;
 
 class PredicateTest {
 
     @Test
     void predicate_can_be_called() {
-        Predicate<String> isEmpty = createPredicate(String::isEmpty);
+        Predicate<String> isEmpty = String::isEmpty;
 
         assertThat(isEmpty.apply("")).isTrue();
         assertThat(isEmpty.apply("not empty")).isFalse();
@@ -20,7 +19,7 @@ class PredicateTest {
 
     @Test
     void predicate_is_actually_a_function() {
-        Predicate<Integer> isEven = createPredicate(i -> i % 2 == 0);
+        Predicate<Integer> isEven = i -> i % 2 == 0;
 
         Function1<Integer, Boolean> isEvenFunc = isEven;
 
@@ -29,8 +28,8 @@ class PredicateTest {
 
     @Test
     void OR_works_for_predicates() {
-        Predicate<String> isFoo = createPredicate(s -> s.equals("foo"));
-        Predicate<String> isBoo = createPredicate(s -> s.equals("boo"));
+        Predicate<String> isFoo = s -> s.equals("foo");
+        Predicate<String> isBoo = s -> s.equals("boo");
 
         Predicate<String> fooOrBoo = isFoo.or(isBoo);
         Predicate<String> booOrFoo = isBoo.or(isFoo);
@@ -47,8 +46,8 @@ class PredicateTest {
 
     @Test
     void AND_works_for_predicates() {
-        Predicate<String> startsWithFoo = createPredicate(s -> s.startsWith("foo"));
-        Predicate<String> endsWithBoo = createPredicate(s -> s.endsWith("boo"));
+        Predicate<String> startsWithFoo = s -> s.startsWith("foo");
+        Predicate<String> endsWithBoo = s -> s.endsWith("boo");
 
         Predicate<String> fooSomethingBoo = startsWithFoo.and(endsWithBoo);
         Predicate<String> fooSomethingBooRev = endsWithBoo.and(startsWithFoo);
@@ -88,7 +87,7 @@ class PredicateTest {
 
     @Test
     void negation_of_predicate_works() {
-        Predicate<Integer> isPositive = createPredicate(i -> i > 0);
+        Predicate<Integer> isPositive = i -> i > 0;
 
         Predicate<Integer> negativeOrZero = isPositive.not();
 
