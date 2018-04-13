@@ -1,12 +1,16 @@
 package ru.spbau.task4;
 
+import java.util.Objects;
+
 public abstract class Function2<T1, T2, M> {
     public abstract M apply(T1 arg1, T2 arg2);
-    public final <A> Function2<T1, T2, A> compose(Function1<M, A> f) {
+    public final <A> Function2<T1, T2, A> compose(Function1<M, A> other) {
+        Objects.requireNonNull(other, "Cannot compose with null function!");
+
         return new Function2<T1, T2, A>() {
             @Override
             public A apply(T1 arg1, T2 arg2) {
-                return f.apply(Function2.this.apply(arg1, arg2));
+                return other.apply(Function2.this.apply(arg1, arg2));
             }
         };
     }

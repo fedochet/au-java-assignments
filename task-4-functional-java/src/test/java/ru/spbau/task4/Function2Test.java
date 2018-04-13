@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static ru.spbau.task4.FunctionUtils.createFunction1;
 import static ru.spbau.task4.FunctionUtils.createFunction2;
 
@@ -57,5 +58,14 @@ class Function2Test {
         assertThat(curried.apply(2).apply("str")).isEqualTo("strstr");
         assertThat(tripleString.apply("a")).isEqualTo("aaa");
         assertThat(tripleString.apply("b")).isEqualTo("bbb");
+    }
+
+    @Test
+    void compose_does_not_take_null() {
+        Function2<Object, Object, Object> left = createFunction2((i, j) -> i);
+
+        assertThrows(NullPointerException.class, () -> {
+            left.compose(null);
+        });
     }
 }

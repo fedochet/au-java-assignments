@@ -1,9 +1,11 @@
 package ru.spbau.task4;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static ru.spbau.task4.FunctionUtils.createFunction1;
 
 class Function1Test {
@@ -46,5 +48,14 @@ class Function1Test {
         Function1<Object, Object> toStringObject = id.compose(toString);
 
         assertThat(toStringObject.apply(100)).isEqualTo("100");
+    }
+
+    @Test
+    void compose_does_not_take_null() {
+        Function1<Object, Object> id = createFunction1(i -> i);
+
+        assertThrows(NullPointerException.class, () -> {
+            id.compose(null);
+        });
     }
 }
