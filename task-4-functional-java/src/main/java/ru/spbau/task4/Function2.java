@@ -28,4 +28,18 @@ public abstract class Function2<T1, T2, M> {
             }
         };
     }
+
+    public Function1<T1, Function1<T2, M>> curry() {
+        return new Function1<T1, Function1<T2, M>>() {
+            @Override
+            public Function1<T2, M> apply(T1 arg1) {
+                return new Function1<T2, M>() {
+                    @Override
+                    public M apply(T2 arg2) {
+                        return Function2.this.apply(arg1, arg2);
+                    }
+                };
+            }
+        };
+    }
 }

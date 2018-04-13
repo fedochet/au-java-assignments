@@ -2,6 +2,9 @@ package ru.spbau.task4;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static ru.spbau.task4.FunctionUtils.createFunction1;
 import static ru.spbau.task4.FunctionUtils.createFunction2;
@@ -42,4 +45,17 @@ class Function2Test {
         assertThat(square.apply(10)).isEqualTo(Math.pow(10, 2));
     }
 
+    @Test
+    void function2_can_be_curried() {
+        Function2<Integer, String, String> multString = createFunction2(
+            (i, s) -> Stream.generate(() -> s).limit(i).collect(Collectors.joining())
+        );
+
+        Function1<Integer, Function1<String, String>> curried = multString.curry();
+        Function1<String, String> tripleString = curried.apply(3);
+
+        assertThat(curried.apply(2).apply("str")).isEqualTo("strstr");
+        assertThat(tripleString.apply("a")).isEqualTo("aaa");
+        assertThat(tripleString.apply("b")).isEqualTo("bbb");
+    }
 }
