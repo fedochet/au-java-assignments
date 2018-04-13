@@ -8,21 +8,19 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static ru.spbau.task4.FunctionUtils.createFunction1;
-import static ru.spbau.task4.FunctionUtils.createFunction2;
 
 class Function2Test {
     @Test
     void function2_can_be_called() {
-        Function2<String, String, String> concat = createFunction2((i, j) -> i + j);
+        Function2<String, String, String> concat = (i, j) -> i + j;
 
         assertThat(concat.apply("first", "second")).isEqualTo("firstsecond");
     }
 
     @Test
     void function2_can_be_composed_with_function1_with_exact_types() {
-        Function2<String, String, String> concat = createFunction2((i, j) -> i + j);
-        Function1<String, String> reverse = createFunction1(s -> new StringBuilder(s).reverse().toString());
+        Function2<String, String, String> concat = (i, j) -> i + j;
+        Function1<String, String> reverse = s -> new StringBuilder(s).reverse().toString();
 
         Function2<String, String, String> concatAndReverse = concat.compose(reverse);
 
@@ -31,7 +29,7 @@ class Function2Test {
 
     @Test
     void first_argument_can_be_binded() {
-        Function2<Integer, Integer, Double> pow = createFunction2((a, b) -> Math.pow(a, b));
+        Function2<Integer, Integer, Double> pow = (a, b) -> Math.pow(a, b);
 
         Function1<Integer, Double> powOfTwo = pow.bind1(2);
 
@@ -40,7 +38,7 @@ class Function2Test {
 
     @Test
     void second_argument_can_be_binded() {
-        Function2<Integer, Integer, Double> pow = createFunction2((a, b) -> Math.pow(a, b));
+        Function2<Integer, Integer, Double> pow = (a, b) -> Math.pow(a, b);
 
         Function1<Integer, Double> square = pow.bind2(2);
 
@@ -49,9 +47,8 @@ class Function2Test {
 
     @Test
     void function2_can_be_curried() {
-        Function2<Integer, String, String> multString = createFunction2(
-            (i, s) -> Stream.generate(() -> s).limit(i).collect(Collectors.joining())
-        );
+        Function2<Integer, String, String> multString =
+            (i, s) -> Stream.generate(() -> s).limit(i).collect(Collectors.joining());
 
         Function1<Integer, Function1<String, String>> curried = multString.curry();
         Function1<String, String> tripleString = curried.apply(3);
@@ -64,8 +61,8 @@ class Function2Test {
     @Test
     @DisplayName("composition works with function that takes wider argument")
     void composition_works_with_wider_argument_type() {
-        Function2<Integer, Integer, Integer> add = createFunction2((i, j) -> i + j);
-        Function1<Object, String> toString = createFunction1(Object::toString);
+        Function2<Integer, Integer, Integer> add = (i, j) -> i + j;
+        Function1<Object, String> toString = Object::toString;
 
         Function2<Integer, Integer, String> addAndConvertToString = add.compose(toString);
 
@@ -75,8 +72,8 @@ class Function2Test {
     @Test
     @DisplayName("composition works with function that returns more narrow type")
     void composition_works_with_narrower_return_type() {
-        Function2<Integer, Integer, Integer> add = createFunction2((i, j) -> i + j);
-        Function1<Integer, String> intToString = createFunction1(Object::toString);
+        Function2<Integer, Integer, Integer> add = (i, j) -> i + j;
+        Function1<Integer, String> intToString = Object::toString;
 
         Function2<Integer, Integer, Object> addAndConvertToObject = add.compose(intToString);
 
@@ -85,7 +82,7 @@ class Function2Test {
 
     @Test
     void compose_does_not_take_null() {
-        Function2<Object, Object, Object> left = createFunction2((i, j) -> i);
+        Function2<Object, Object, Object> left = (i, j) -> i;
 
         assertThrows(NullPointerException.class, () -> {
             left.compose(null);
