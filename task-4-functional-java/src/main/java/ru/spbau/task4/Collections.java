@@ -14,4 +14,15 @@ public final class Collections {
 
         return result;
     }
+
+    public static <T> Iterable<T> filter(Iterable<? extends T> iterable, Predicate<? super T> condition) {
+        List<T> result = new ArrayList<>();
+        for (T t : iterable) {
+            if (condition.apply(t)) {
+                result.add(t);
+            }
+        }
+
+        return result;
+    }
 }
