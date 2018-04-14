@@ -104,4 +104,14 @@ class CollectionsTest {
         assertThat(folded).isEqualTo(2);
     }
 
+    @Test
+    void foldr_works_with_wider_types() {
+        Iterable<Integer> ints = Arrays.asList(1, 2, 3);
+        Function2<Object, Object, String> secondToString = (i, j) -> "" + i + j;
+
+        CharSequence folded = Collections.<Number, CharSequence>foldr(ints, secondToString, "str");
+
+        assertThat(folded).isEqualTo("123str");
+    }
+
 }
