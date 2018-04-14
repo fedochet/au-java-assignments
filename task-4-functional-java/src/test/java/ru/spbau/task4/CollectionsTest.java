@@ -3,6 +3,7 @@ package ru.spbau.task4;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,10 +39,38 @@ class CollectionsTest {
     @Test
     void filter_works_with_wider_types() {
         Iterable<String> strings = Arrays.asList("a", "bc", "d");
-        Predicate<Object> objectPredicate = s -> s == null;
+        Predicate<Object> objectPredicate = Objects::isNull;
 
         Iterable<CharSequence> singleChars = Collections.filter(strings, objectPredicate);
 
         assertThat(singleChars).isEmpty();
+    }
+
+    @Test
+    void foldl_works_from_left_to_right() {
+        Iterable<Integer> strings = Arrays.asList(1, 2, 3);
+
+        String folded = Collections.foldl(strings, (a, b) -> b + "" + a, "");
+
+        assertThat(folded).isEqualTo("321");
+    }
+
+    @Test
+    void foldl_on_empty_list_returns_zero_element() {
+        Iterable<Integer> emptyList = Arrays.asList();
+
+        String folded = Collections.foldl(emptyList, (i, j) -> "string", "zero");
+
+        assertThat(folded).isEqualTo("zero");
+    }
+
+    @Test
+    void foldl_works_with_wider_types() {
+        Iterable<Integer> ints = Arrays.asList(1, 2, 3);
+        Function2<Object, Object, String> secondToString = (i, j) -> "" + i + j;
+
+        CharSequence folded = Collections.<Number, CharSequence>foldl(ints, secondToString, "str");
+
+        assertThat(folded).isEqualTo("str123");
     }
 }

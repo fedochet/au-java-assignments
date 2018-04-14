@@ -25,4 +25,17 @@ public final class Collections {
 
         return result;
     }
+
+//    public static <T, U> U foldr(Iterable<T> iterable, Function2<T, U, U> f, U zero) {
+//        U result = zero;
+//    }
+
+    public static <T, U> U foldl(Iterable<? extends T> iterable, Function2<? super U, ? super T, ? extends U> f, U zero) {
+        U result = zero;
+        for (T t : iterable) {
+            result = f.apply(result, t);
+        }
+
+        return result;
+    }
 }
