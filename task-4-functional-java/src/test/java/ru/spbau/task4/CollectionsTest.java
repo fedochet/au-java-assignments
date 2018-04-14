@@ -48,11 +48,12 @@ class CollectionsTest {
 
     @Test
     void foldl_works_from_left_to_right() {
-        Iterable<Integer> strings = Arrays.asList(1, 2, 3);
+        // (((1 - 2) - 3) - 4
+        Iterable<Integer> numbers = Arrays.asList(2, 3, 4);
 
-        String folded = Collections.foldl(strings, (a, b) -> b + "" + a, "");
+        Integer folded = Collections.foldl(numbers, (a, b) -> a - b, 1);
 
-        assertThat(folded).isEqualTo("321");
+        assertThat(folded).isEqualTo(-8);
     }
 
     @Test
@@ -73,4 +74,15 @@ class CollectionsTest {
 
         assertThat(folded).isEqualTo("str123");
     }
+
+    @Test
+    void foldr_works_from_right_to_left() {
+        // 2 - (3 - (4 - 1))
+        Iterable<Integer> numbers = Arrays.asList(2, 3, 4);
+
+        Integer folded = Collections.foldr(numbers, (a, b) -> a - b, 1);
+
+        assertThat(folded).isEqualTo(2);
+    }
+
 }
