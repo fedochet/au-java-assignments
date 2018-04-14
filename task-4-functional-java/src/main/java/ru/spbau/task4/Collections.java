@@ -32,6 +32,10 @@ public final class Collections {
         );
     }
 
+    public static <T> Iterable<T> takeUnless(Iterable<? extends T> iterable, Predicate<? super T> condition) {
+        return takeWhile(iterable, condition.not());
+    }
+
     public static <T, U> U foldr(Iterable<? extends T> iterable, Function2<? super T, ? super U, ? extends U> f, U zero) {
         return recursiveFoldr(iterable.iterator(), f, zero);
     }
