@@ -47,6 +47,15 @@ class CollectionsTest {
     }
 
     @Test
+    void take_while_saves_only_matched_elements() {
+        Iterable<Integer> ints = Arrays.asList(1, 2, 3, 4, 5, 3, 1, 7);
+
+        Iterable<Integer> lessThanFive = Collections.takeWhile(ints, i -> i < 5);
+
+        assertThat(lessThanFive).containsExactly(1, 2, 3, 4);
+    }
+
+    @Test
     void foldl_works_from_left_to_right() {
         // (((1 - 2) - 3) - 4
         Iterable<Integer> numbers = Arrays.asList(2, 3, 4);
