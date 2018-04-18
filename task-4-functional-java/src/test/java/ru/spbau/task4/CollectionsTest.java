@@ -2,9 +2,13 @@ package ru.spbau.task4;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toCollection;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class CollectionsTest {
@@ -25,6 +29,16 @@ class CollectionsTest {
         Iterable<Object> intStrings = Collections.<Number, Object>map(numbers, toString);
 
         assertThat(intStrings).containsExactly("1", "2", "3");
+    }
+
+    @Test
+    void result_of_map_is_a_copy() {
+        List<Integer> ints = Stream.of(1, 2, 3).collect(toCollection(ArrayList::new));
+        Iterable<Integer> negative = Collections.map(ints, Math::negateExact);
+
+        ints.add(4);
+
+        assertThat(negative).containsExactly(-1, -2, -3);
     }
 
     @Test
@@ -113,5 +127,4 @@ class CollectionsTest {
 
         assertThat(folded).isEqualTo("123str");
     }
-
 }
