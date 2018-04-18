@@ -99,10 +99,12 @@ class HashMapTrieNode implements StreamSerializable {
     @Override
     public void deserialize(@NotNull InputStream in) throws IOException {
         DataInputStream dataOutputStream = getDataInputStream(in);
+
         int newSize = dataOutputStream.readInt();
         boolean newIsTerminal = dataOutputStream.readBoolean();
-
         Map<Character, HashMapTrieNode> newNextNodes = deserializeNextNodes(dataOutputStream);
+
+        assertNodeConsistency(newSize, newIsTerminal, newNextNodes);
 
         nextNodes.clear();
         nextNodes.putAll(newNextNodes);
@@ -181,5 +183,27 @@ class HashMapTrieNode implements StreamSerializable {
         }
 
         return map;
+    }
+
+    private void assertNodeConsistency(int nodeSize,
+                                       boolean nodeIsTerminal,
+                                       Map<Character, HashMapTrieNode> nextNodes) throws IOException {
+        int actualSize = 0;
+
+        for (Map.Entry<Character, HashMapTrieNode> node : nextNodes.entrySet()) {
+            if (!Character.isAlphabetic(node.getKey())) {
+                throw new TrieDeserializationException("Trie node cannot contain non-alphabetic characters!");
+            }
+
+            actualSize += node.getValue().size();
+        }
+
+        if (nodeIsTerminal) {
+            actualSize++;
+        }
+
+        if (actualSize != nodeSize) {
+            throw new TrieDeserializationException("Trie node size is not consistent with its actual size!");
+        }
     }
 }

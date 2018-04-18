@@ -2,6 +2,7 @@ package ru.spbau.task3;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
@@ -58,28 +59,6 @@ class HashMapTrieSerializationTest {
     }
 
     @Test
-    void if_exception_is_thrown_then_deserializable_trie_is_not_changed() throws IOException {
-        List<String> words = Arrays.asList("hello", "world", "one", "two", "three", "four");
-        List<String> wordsInDeserialized = Arrays.asList("other", "words", "from", "deserialized", "trie");
-
-        words.forEach(originalTree::add);
-        wordsInDeserialized.forEach(deserializedTree::add);
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        originalTree.serialize(outputStream);
-
-        ByteArrayInputStream brokenInputStream =
-            new ByteArrayInputStream(outputStream.toByteArray(), 0, outputStream.size() / 2);
-
-        assertThrows(
-            IOException.class,
-            () -> deserializedTree.deserialize(brokenInputStream)
-        );
-
-        assertThat(deserializedTree).isEqualTo(trieWithWords(wordsInDeserialized));
-    }
-
-    @Test
     void exception_is_thrown_when_null_is_passed() {
         assertThrows(NullPointerException.class,
             () -> originalTree.serialize(null)
@@ -90,9 +69,70 @@ class HashMapTrieSerializationTest {
         );
     }
 
+    @Nested
+    class InconsistentSerializationTest {
+
+        @Test
+        void if_exception_is_thrown_then_deserializable_trie_is_not_changed() throws IOException {
+            List<String> words = Arrays.asList("hello", "world", "one", "two", "three", "four");
+            List<String> wordsInDeserialized = Arrays.asList("other", "words", "from", "deserialized", "trie");
+
+            words.forEach(originalTree::add);
+            wordsInDeserialized.forEach(deserializedTree::add);
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            originalTree.serialize(outputStream);
+
+            ByteArrayInputStream brokenInputStream =
+                new ByteArrayInputStream(outputStream.toByteArray(), 0, outputStream.size() / 2);
+
+            assertThrows(
+                IOException.class,
+                () -> deserializedTree.deserialize(brokenInputStream)
+            );
+
+            assertThat(deserializedTree).isEqualTo(trieWithWords(wordsInDeserialized));
+        }
+
+        @Test
+        void exception_is_thrown_when_there_is_invalid_character_recorded_into_stream() throws IOException {
+            serializeTrieWithInvalidChar(outputStream);
+
+            assertThrows(TrieDeserializationException.class, () -> {
+                deserializedTree.deserialize(inputStream);
+            });
+        }
+
+        @Test
+        void exception_is_thrown_when_trie_has_wrong_size_recorded_into_stream() throws IOException {
+            DataOutputStream dataStream = new DataOutputStream(outputStream);
+
+            serializeTrieWithInconsistentSize(dataStream);
+
+            assertThrows(TrieDeserializationException.class, () -> {
+                deserializedTree.deserialize(inputStream);
+            });
+        }
+
+        private void serializeTrieWithInvalidChar(OutputStream outputStream) throws IOException {
+            HashMapTrieNode invalidNode = new HashMapTrieNode();
+            invalidNode.add("#", 0);
+
+            invalidNode.serialize(outputStream);
+        }
+
+        private void serializeTrieWithInconsistentSize(DataOutputStream dataStream) throws IOException {
+            dataStream.writeInt(0);
+            dataStream.writeBoolean(true);
+            dataStream.writeInt(0);
+        }
+
+    }
+
     private HashMapTrie trieWithWords(List<String> wordsInDeserialized) {
         HashMapTrie expectedTrie = new HashMapTrie();
         wordsInDeserialized.forEach(expectedTrie::add);
         return expectedTrie;
     }
+
 }
