@@ -33,7 +33,7 @@ class CollectionsTest {
 
     @Test
     void result_of_map_is_a_copy() {
-        List<Integer> ints = Stream.of(1, 2, 3).collect(toCollection(ArrayList::new));
+        List<Integer> ints = asArrayList(1, 2, 3);
         Iterable<Integer> negative = Collections.map(ints, Math::negateExact);
 
         ints.add(4);
@@ -61,6 +61,16 @@ class CollectionsTest {
     }
 
     @Test
+    void result_of_filter_is_a_copy() {
+        List<Integer> ints = asArrayList(1, -1, 2, -2);
+        Iterable<Integer> positives = Collections.filter(ints, i -> i > 0);
+
+        ints.add(3);
+
+        assertThat(positives).containsExactly(1, 2);
+    }
+
+    @Test
     void take_while_saves_only_matched_elements() {
         Iterable<Integer> ints = Arrays.asList(1, 2, 3, 4, 5, 3, 1, 7);
 
@@ -79,9 +89,13 @@ class CollectionsTest {
 
     }
 
+    /**
+     * Checks that foldl on array [2, 3, 4] with zero element is performed like this:
+     * <p>
+     * (((1 - 2) - 3) - 4
+     */
     @Test
     void foldl_works_from_left_to_right() {
-        // (((1 - 2) - 3) - 4
         Iterable<Integer> numbers = Arrays.asList(2, 3, 4);
 
         Integer folded = Collections.foldl(numbers, (a, b) -> a - b, 1);
@@ -108,14 +122,27 @@ class CollectionsTest {
         assertThat(folded).isEqualTo("str123");
     }
 
+    /**
+     * Checks that foldr on array [2, 3, 4] with zero element 1 is performed like this:
+     * <p>
+     * 2 - (3 - (4 - 1))
+     */
     @Test
     void foldr_works_from_right_to_left() {
-        // 2 - (3 - (4 - 1))
         Iterable<Integer> numbers = Arrays.asList(2, 3, 4);
 
         Integer folded = Collections.foldr(numbers, (a, b) -> a - b, 1);
 
         assertThat(folded).isEqualTo(2);
+    }
+
+    @Test
+    void foldr_on_empty_list_returns_zero_element() {
+        List<Integer> emptyList = Arrays.asList();
+
+        Integer folded = Collections.foldr(emptyList, (a, b) -> a + b, 1);
+
+        assertThat(folded).isEqualTo(1);
     }
 
     @Test
@@ -126,5 +153,10 @@ class CollectionsTest {
         CharSequence folded = Collections.<Number, CharSequence>foldr(ints, secondToString, "str");
 
         assertThat(folded).isEqualTo("123str");
+    }
+
+    @SafeVarargs
+    private final <T> ArrayList<T> asArrayList(T... integers) {
+        return Stream.of(integers).collect(toCollection(ArrayList::new));
     }
 }
