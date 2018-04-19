@@ -5,10 +5,10 @@ import java.util.Objects;
 public interface Predicate<T> extends Function1<T, Boolean> {
 
     //private
-    Predicate<?> ALWAYS_TRUE = arg -> true;
+    Predicate<Object> ALWAYS_TRUE = arg -> true;
 
     //private
-    Predicate<?> ALWAYS_FALSE = ALWAYS_TRUE.not();
+    Predicate<Object> ALWAYS_FALSE = ALWAYS_TRUE.not();
 
     default Predicate<T> or(Predicate<? super T> other) {
         Objects.requireNonNull(other, "OR does not accept null predicates!");
