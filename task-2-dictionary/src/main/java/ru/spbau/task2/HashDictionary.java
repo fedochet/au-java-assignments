@@ -9,9 +9,11 @@ import java.util.List;
 public class HashDictionary<K, V> implements Dictionary<K, V> {
 
     private static final int EXPANSION_FACTOR = 2;
+    private static final double DEFAULT_LOAD_FACTOR = 0.75;
+    private static final int DEFAULT_CAPACITY = 16;
 
-    private final double LOAD_FACTOR;
-    private int BUCKETS_NUMBER;
+    private final double loadFactor;
+    private int bucketsNumber;
     private int size = 0;
 
     private final List<HashDictionaryBucket<K, V>> buckets = new ArrayList<>();
@@ -23,18 +25,18 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
     public HashDictionary(int capacity, double loadFactor) {
         assertParameters(capacity, loadFactor);
 
-        BUCKETS_NUMBER = capacity;
-        LOAD_FACTOR = loadFactor;
+        bucketsNumber = capacity;
+        this.loadFactor = loadFactor;
 
         createBuckets();
     }
 
     public HashDictionary(int capacity) {
-        this(capacity, 0.75);
+        this(capacity, DEFAULT_LOAD_FACTOR);
     }
 
     public HashDictionary() {
-        this(16);
+        this(DEFAULT_CAPACITY);
     }
 
     @Override
@@ -83,7 +85,7 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
         }
 
         size++;
-        if (size > BUCKETS_NUMBER * LOAD_FACTOR) {
+        if (size > bucketsNumber * loadFactor) {
             expandUp();
         }
 
@@ -104,7 +106,7 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
         }
 
         size--;
-        if (EXPANSION_FACTOR * size < BUCKETS_NUMBER * LOAD_FACTOR && BUCKETS_NUMBER > 1) {
+        if (EXPANSION_FACTOR * size < bucketsNumber * loadFactor && bucketsNumber > 1) {
             shrinkDown();
         }
 
@@ -132,7 +134,7 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
     }
 
     private void createBuckets() {
-        for (int i = 0; i < BUCKETS_NUMBER; i++) {
+        for (int i = 0; i < bucketsNumber; i++) {
             buckets.add(new HashDictionaryBucket<>());
         }
     }
@@ -169,13 +171,13 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
     }
 
     private void shrinkDown() {
-        BUCKETS_NUMBER /= EXPANSION_FACTOR;
+        bucketsNumber /= EXPANSION_FACTOR;
         size = containsNullEntry ? 1 : 0;
         rehash();
     }
 
     private void expandUp() {
-        BUCKETS_NUMBER *= EXPANSION_FACTOR;
+        bucketsNumber *= EXPANSION_FACTOR;
         size = containsNullEntry ? 1 : 0;
         rehash();
     }
@@ -191,7 +193,7 @@ public class HashDictionary<K, V> implements Dictionary<K, V> {
     }
 
     private HashDictionaryBucket<K, V> getBucketByKey(K key) {
-        int bucketIndex = (key.hashCode() % BUCKETS_NUMBER + BUCKETS_NUMBER) % BUCKETS_NUMBER;
+        int bucketIndex = (key.hashCode() % bucketsNumber + bucketsNumber) % bucketsNumber;
         return buckets.get(bucketIndex);
     }
 
