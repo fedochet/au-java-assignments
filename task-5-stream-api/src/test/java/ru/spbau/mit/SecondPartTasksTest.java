@@ -1,20 +1,58 @@
 package ru.spbau.mit;
 
 import com.google.common.collect.ImmutableMap;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class SecondPartTasksTest {
 
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
+    private File aaa;
+    private File bbb;
+
+    @Before
+    public void initFiles() throws IOException {
+        aaa = folder.newFile();
+        try (PrintWriter fileWriter = new PrintWriter(new FileWriter(aaa))) {
+            fileWriter.println("aaastring1 aaastring2 aaastring3");
+            fileWriter.println("aaastring4 aaastring5 aaastring6");
+            fileWriter.println("aaastring7 aaastring8 aaastring9");
+        }
+
+        bbb = folder.newFile();
+        try (PrintWriter fileWriter = new PrintWriter(new FileWriter(bbb))) {
+            fileWriter.println("bbbstring1 bbbstring2 bbbstring3");
+            fileWriter.println("bbbstring4 bbbstring5 bbbstring6");
+            fileWriter.println("bbbstring7 bbbstring8 bbbstring9");
+        }
+    }
+
     @Test
     public void testFindQuotes() {
-        fail();
+        assertEquals(
+            Arrays.asList(
+                "aaastring4 aaastring5 aaastring6",
+                "bbbstring4 bbbstring5 bbbstring6"
+            ),
+
+            SecondPartTasks.findQuotes(
+                Arrays.asList(aaa.getAbsolutePath(), bbb.getAbsolutePath()),
+                "string5"
+            )
+        );
     }
 
     @Test
