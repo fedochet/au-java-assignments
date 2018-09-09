@@ -39,7 +39,7 @@ final class Commit {
 }
 
 interface Repository {
-    String getHead();
+    Optional<String> getHead();
     Optional<Blob> getBlob(String hash);
     Optional<FileTree> getFileTree(String hash);
     Optional<Commit> getCommit(String hash);
