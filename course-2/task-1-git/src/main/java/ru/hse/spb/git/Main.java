@@ -1,6 +1,7 @@
 package ru.hse.spb.git;
 
 import lombok.Data;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -36,6 +37,11 @@ final class Commit {
     private final Path file;
     private final String message;
     private final List<ObjectRef> content; // hashes
+    private final String parentHash; // hash of parent commit
+
+    Optional<String> getParentHash() {
+        return Optional.ofNullable(parentHash);
+    }
 }
 
 interface Repository {
@@ -43,6 +49,10 @@ interface Repository {
     Optional<Blob> getBlob(String hash);
     Optional<FileTree> getFileTree(String hash);
     Optional<Commit> getCommit(String hash);
+
+    Blob createBlob(Path path);
+    FileTree createFileTree(String name, List<String> content);
+    Commit createCommit(String message, Path file, @Nullable String parentHash);
 }
 
 public class Main {
