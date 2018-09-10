@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class FileBasedRepositoryTest {
+public class FileBasedRepositoryInitTest {
 
     @Rule
     public final TemporaryFolder temporaryFolder = new TemporaryFolder();
