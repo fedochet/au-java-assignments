@@ -72,4 +72,15 @@ public class FileBasedRepositoryOperationsTest {
 
         assertThat(repository.getBlob(repository.hashBlob(file))).isEmpty();
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void blob_content_cannot_be_read_if_no_marker_available() throws IOException {
+        Path file = temporaryFolder.newFile("file.txt").toPath();
+        Files.write(file, "some text".getBytes());
+
+        Blob blob = repository.createBlob(file);
+        Files.write(blob.getFile(), "some text".getBytes());
+
+        repository.getBlobContent(blob);
+    }
 }
