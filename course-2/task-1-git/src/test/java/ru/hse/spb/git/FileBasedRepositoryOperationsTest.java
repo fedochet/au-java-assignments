@@ -1,6 +1,7 @@
 package ru.hse.spb.git;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -82,5 +83,24 @@ public class FileBasedRepositoryOperationsTest {
         Files.write(blob.getFile(), "some text".getBytes());
 
         repository.getBlobContent(blob);
+    }
+
+    @Test
+    @Ignore
+    public void commit_can_be_created_with_message_and_refs() throws IOException {
+        Path fileToCommit = temporaryFolder.newFile("file_to_commit").toPath();
+
+        Commit commit = repository.createCommit("message", fileToCommit, null);
+
+        assertThat(commit.getMessage()).isEqualTo("message");
+        assertThat(commit.getContent()).containsExactly(
+            new ObjectRef(
+                repository.hashBlob(fileToCommit),
+                "file_to_commit",
+                ObjectType.BLOB
+            )
+        );
+        assertThat(commit.getFile()).hasFileName(commit.getHash());
+        assertThat(commit.getParentHash()).isEmpty();
     }
 }

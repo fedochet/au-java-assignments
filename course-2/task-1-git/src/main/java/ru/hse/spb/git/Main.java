@@ -8,7 +8,10 @@ import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -22,6 +25,7 @@ enum ObjectType {
 @Data
 final class ObjectRef {
     private final String hash;
+    private final String name;
     private final ObjectType type;
 }
 
@@ -54,21 +58,27 @@ final class Commit {
 
 interface Repository {
     Optional<String> getHead();
+
     Optional<Blob> getBlob(String hash);
+
     Optional<FileTree> getFileTree(String hash);
+
     Optional<Commit> getCommit(String hash);
 
     @NotNull
     String hashBlob(Path path) throws IOException;
+
     @NotNull
     byte[] getBlobContent(@NotNull Blob blob) throws IOException;
 
     @NotNull
     Blob createBlob(Path path) throws IOException;
+
     @NotNull
     FileTree createFileTree(String name, List<String> content);
+
     @NotNull
-    Commit createCommit(String message, Path file, @Nullable String parentHash);
+    Commit createCommit(String message, Path file, @Nullable String parentHash) throws IOException;
 }
 
 class FileBasedRepository implements Repository {
