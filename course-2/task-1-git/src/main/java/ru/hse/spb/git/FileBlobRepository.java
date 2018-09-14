@@ -49,7 +49,7 @@ class FileBlobRepository implements BlobRepository {
             Path blobFile = Files.createFile(root.resolve(hash));
 
             try (InputStream stream = dataSupplier.get()) {
-                Files.copy(stream, blobFile);
+                Files.copy(withMarker(stream), blobFile);
             }
 
             return hash;
@@ -58,9 +58,13 @@ class FileBlobRepository implements BlobRepository {
 
     @Override
     public String hashBlob(InputStream blob) throws IOException {
-        return DigestUtils.sha1Hex(new SequenceInputStream(
-            IOUtils.toInputStream("file\0", ENCODING),
+        return DigestUtils.sha1Hex(withMarker(blob));
+    }
+
+    private InputStream withMarker(InputStream blob) throws IOException {
+        return new SequenceInputStream(
+            IOUtils.toInputStream(MARKER, ENCODING),
             blob
-        ));
+        );
     }
 }
