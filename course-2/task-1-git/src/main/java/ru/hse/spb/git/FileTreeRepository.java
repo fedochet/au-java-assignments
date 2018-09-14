@@ -20,7 +20,7 @@ class FileTreeRepository {
     private static final String ENCODING = "UTF-8";
     private final Path root;
 
-    FileTree createTree(List<FileRef> refs) throws IOException {
+    public FileTree createTree(List<FileRef> refs) throws IOException {
         String hash = hashTree(refs);
         if (exists(hash)) {
             throw new IllegalArgumentException("File tree with " + hash + " already exists!");
@@ -28,23 +28,18 @@ class FileTreeRepository {
 
         Path blobFile = Files.createFile(root.resolve(hash));
 
-        String serializedRefs = refs.stream()
-            .map(r -> String.format("%s %s %s", r.getHash(), r.getType().name(), r.getName()))
-            .collect(Collectors.joining(System.getProperty("line.separator")));
-
-        try (InputStream stream = withMarker(serializedRefs)) {
+        try (InputStream stream = withMarker(serializeReferences(refs))) {
             Files.copy(stream, blobFile);
         }
 
         return new FileTree(hash, refs);
     }
 
-
     public boolean exists(String hash) {
         return Files.exists(root.resolve(hash));
     }
 
-    Optional<FileTree> getTree(String hash) throws IOException {
+    public Optional<FileTree> getTree(String hash) throws IOException {
         if (!exists(hash)) {
             return Optional.empty();
         }
@@ -52,33 +47,50 @@ class FileTreeRepository {
         try (InputStream inputStream = Files.newInputStream(root.resolve(hash))) {
             assert MARKER_LENGTH == inputStream.skip(MARKER_LENGTH) : "No " + MARKER + " present in file!";
 
-            List<FileRef> collect =
-                IOUtils.readLines(inputStream, ENCODING).stream()
-                .map(line -> line.split(" ", 3))
-                .map(args -> new FileRef(args[0], FileRef.Type.valueOf(args[1]), args[2]))
-                .collect(Collectors.toList());
+            List<FileRef> collect = deserializeReferences(inputStream);
 
             return Optional.of(new FileTree(hash, collect));
         }
     }
 
-    String hashTree(List<FileRef> refs) throws IOException {
+    public String hashTree(List<FileRef> refs) throws IOException {
         if (refs.isEmpty()) {
             throw new IllegalStateException("Cannot create empty file tree!");
         }
 
-        String serializedRefs = refs.stream()
-            .map(r -> String.format("%s %s %s", r.getHash(), r.getType().name(), r.getName()))
-            .collect(Collectors.joining(System.getProperty("line.separator")));
-
-        return DigestUtils.sha1Hex(withMarker(serializedRefs));
+        try (InputStream stream = withMarker(serializeReferences(refs))) {
+            return DigestUtils.sha1Hex(stream);
+        }
     }
 
-    private SequenceInputStream withMarker(String serializedRefs) throws IOException {
+    private InputStream withMarker(InputStream data) throws IOException {
         return new SequenceInputStream(
             IOUtils.toInputStream(MARKER, ENCODING),
-            IOUtils.toInputStream(serializedRefs, "UTF-8")
+            data
         );
+    }
+
+    private InputStream serializeReferences(List<FileRef> refs) throws IOException {
+        String serializedText = refs.stream()
+            .map(this::serializeReference)
+            .collect(Collectors.joining(System.getProperty("line.separator")));
+
+        return IOUtils.toInputStream(serializedText, "UTF-8");
+    }
+
+    private List<FileRef> deserializeReferences(InputStream inputStream) throws IOException {
+        return IOUtils.readLines(inputStream, ENCODING).stream()
+            .map(this::deserializeRef)
+            .collect(Collectors.toList());
+    }
+
+    private String serializeReference(FileRef r) {
+        return String.format("%s %s %s", r.getHash(), r.getType().name(), r.getName());
+    }
+
+    private FileRef deserializeRef(String line) {
+        String[] args = line.split(" ", 3);
+        return new FileRef(args[0], FileRef.Type.valueOf(args[1]), args[2]);
     }
 
 }
