@@ -28,7 +28,7 @@ class FileBlobRepository implements BlobRepository {
         }
 
         InputStream blobInputStream = Files.newInputStream(file);
-        assert MARKER_LENGTH == blobInputStream.skip(MARKER_LENGTH) : "Cannot skip marker bytes";
+        assert MARKER_LENGTH == blobInputStream.skip(MARKER_LENGTH) : "No " + MARKER + " present in file!";
 
         return Optional.of(blobInputStream);
     }
@@ -43,13 +43,13 @@ class FileBlobRepository implements BlobRepository {
         try (InputStream inputStream = dataSupplier.get()) {
             String hash = hashBlob(inputStream);
             if (exists(hash)) {
-                throw new IllegalArgumentException("Blob with such hash already exists!");
+                throw new IllegalArgumentException("Blob with " + hash + " hash already exists!");
             }
 
             Path blobFile = Files.createFile(root.resolve(hash));
 
-            try (InputStream stream = dataSupplier.get()) {
-                Files.copy(withMarker(stream), blobFile);
+            try (InputStream stream = withMarker(dataSupplier.get())) {
+                Files.copy(stream, blobFile);
             }
 
             return hash;
