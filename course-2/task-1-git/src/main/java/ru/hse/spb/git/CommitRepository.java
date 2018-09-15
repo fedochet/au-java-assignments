@@ -1,6 +1,7 @@
 package ru.hse.spb.git;
 
 import lombok.AllArgsConstructor;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,7 +10,9 @@ import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 public class CommitRepository {
@@ -26,10 +29,10 @@ public class CommitRepository {
             return Optional.empty();
         }
 
-        InputStream encodedCommit = Files.newInputStream(file);
-        assert MARKER_LENGTH == encodedCommit.skip(MARKER_LENGTH) : "No " + MARKER + " present in file!";
-
-        return Optional.of(decodeCommit(encodedCommit));
+        try (InputStream encodedCommit = Files.newInputStream(file)) {
+            assert MARKER_LENGTH == encodedCommit.skip(MARKER_LENGTH) : "No " + MARKER + " present in file!";
+            return Optional.of(decodeCommit(hash, encodedCommit));
+        }
     }
 
     public boolean exists(String hash) {
@@ -37,13 +40,33 @@ public class CommitRepository {
     }
 
     @NotNull
-    public String createCommit(String fileTreeHash, String message) throws IOException {
-        return null;
+    public Commit createCommit(String fileTreeHash, String message) throws IOException {
+        String hash = hashCommit(fileTreeHash, message);
+        if (exists(hash)) {
+            throw new IllegalArgumentException("Commit with such " + hash + " already exists!");
+        }
+
+        Path treeFile = Files.createFile(root.resolve(hash));
+
+        try (InputStream inputStream = withMarker(encodeCommit(fileTreeHash, message))) {
+            Files.copy(inputStream, treeFile);
+        }
+
+        return new Commit(hash, fileTreeHash, message);
     }
 
     @NotNull
     public String hashCommit(String fileTreeHash, String message) throws IOException {
-        return null;
+        try (InputStream inputStream = withMarker(encodeCommit(fileTreeHash, message))) {
+            return DigestUtils.sha1Hex(inputStream);
+        }
+    }
+
+    private InputStream encodeCommit(String fileTreeHash, String message) throws IOException {
+        return new SequenceInputStream(
+            IOUtils.toInputStream(String.format("tree %s", fileTreeHash), ENCODING),
+            IOUtils.toInputStream(message, ENCODING)
+        );
     }
 
     private InputStream withMarker(InputStream blob) throws IOException {
@@ -53,8 +76,13 @@ public class CommitRepository {
         );
     }
 
-    private Commit decodeCommit(InputStream encodedCommit) {
-        return null;
-    }
+    private Commit decodeCommit(String hash, InputStream encodedCommit) throws IOException {
+        List<String> strings = IOUtils.readLines(encodedCommit, ENCODING);
 
+        String treeLine = strings.get(0);
+        String treeHash = treeLine.split(" ")[1];
+        String message = strings.stream().skip(1).collect(Collectors.joining(System.getProperty("line.separator")));
+
+        return new Commit(hash, treeHash, message);
+    }
 }
