@@ -39,21 +39,19 @@ class FileBlobRepository implements BlobRepository {
     }
 
     @Override
-    public String createBlob(IOSupplier<InputStream> dataSupplier) throws IOException {
-        try (InputStream inputStream = dataSupplier.get()) {
-            String hash = hashBlob(inputStream);
-            if (exists(hash)) {
-                throw new IllegalArgumentException("Blob with " + hash + " hash already exists!");
-            }
-
-            Path blobFile = Files.createFile(root.resolve(hash));
-
-            try (InputStream stream = withMarker(dataSupplier.get())) {
-                Files.copy(stream, blobFile);
-            }
-
-            return hash;
+    public String createBlob(Path file) throws IOException {
+        String hash = useFile(file, this::hashBlob);
+        if (exists(hash)) {
+            throw new IllegalArgumentException("Blob with " + hash + " hash already exists!");
         }
+
+        Path blobFile = Files.createFile(root.resolve(hash));
+
+        try (InputStream stream = withMarker(Files.newInputStream(file))) {
+            Files.copy(stream, blobFile);
+        }
+
+        return hash;
     }
 
     @Override
@@ -66,5 +64,15 @@ class FileBlobRepository implements BlobRepository {
             IOUtils.toInputStream(MARKER, ENCODING),
             blob
         );
+    }
+
+    interface IOFunction<F, T> {
+        T apply(F f) throws IOException;
+    }
+
+    private static <T> T useFile(Path path, IOFunction<InputStream, T> user) throws IOException {
+        try (InputStream inputStream = Files.newInputStream(path)) {
+            return user.apply(inputStream);
+        }
     }
 }
