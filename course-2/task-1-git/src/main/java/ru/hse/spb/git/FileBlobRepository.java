@@ -13,7 +13,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 @AllArgsConstructor
-class FileBlobRepository implements BlobRepository {
+class FileBlobRepository {
 
     private static final String ENCODING = "UTF-8";
     private static final String MARKER = "file\0";
@@ -21,7 +21,6 @@ class FileBlobRepository implements BlobRepository {
 
     private final Path root;
 
-    @Override
     public Optional<InputStream> getBlob(String hash) throws IOException {
         Path file = root.resolve(hash);
         if (!Files.exists(file)) {
@@ -34,13 +33,11 @@ class FileBlobRepository implements BlobRepository {
         return Optional.of(blobInputStream);
     }
 
-    @Override
     public boolean exists(String hash) {
         return Files.exists(root.resolve(hash));
     }
 
     @NotNull
-    @Override
     public String createBlob(Path file) throws IOException {
         String hash = useFile(file, this::hashBlob);
         if (exists(hash)) {
@@ -57,7 +54,6 @@ class FileBlobRepository implements BlobRepository {
     }
 
     @NotNull
-    @Override
     public String hashBlob(InputStream blob) throws IOException {
         return DigestUtils.sha1Hex(withMarker(blob));
     }
