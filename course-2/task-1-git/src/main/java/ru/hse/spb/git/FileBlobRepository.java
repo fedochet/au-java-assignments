@@ -39,7 +39,7 @@ class FileBlobRepository {
 
     @NotNull
     public String createBlob(Path file) throws IOException {
-        String hash = useFile(file, this::hashBlob);
+        String hash = hashBlob(file);
         if (exists(hash)) {
             throw new IllegalArgumentException("Blob with " + hash + " hash already exists!");
         }
@@ -53,9 +53,12 @@ class FileBlobRepository {
         return hash;
     }
 
+
     @NotNull
-    public String hashBlob(InputStream blob) throws IOException {
-        return DigestUtils.sha1Hex(withMarker(blob));
+    public String hashBlob(Path blob) throws IOException {
+        try (InputStream inputStream = Files.newInputStream(blob)) {
+            return DigestUtils.sha1Hex(withMarker(inputStream));
+        }
     }
 
     private InputStream withMarker(InputStream blob) throws IOException {
@@ -63,15 +66,5 @@ class FileBlobRepository {
             IOUtils.toInputStream(MARKER, ENCODING),
             blob
         );
-    }
-
-    interface IOFunction<F, T> {
-        T apply(F f) throws IOException;
-    }
-
-    private static <T> T useFile(Path path, IOFunction<InputStream, T> user) throws IOException {
-        try (InputStream inputStream = Files.newInputStream(path)) {
-            return user.apply(inputStream);
-        }
     }
 }
