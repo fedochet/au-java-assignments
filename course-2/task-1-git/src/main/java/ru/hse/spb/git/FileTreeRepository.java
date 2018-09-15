@@ -3,6 +3,7 @@ package ru.hse.spb.git;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +21,7 @@ class FileTreeRepository {
     private static final String ENCODING = "UTF-8";
     private final Path root;
 
+    @NotNull
     public FileTree createTree(List<FileRef> refs) throws IOException {
         String hash = hashTree(refs);
         if (exists(hash)) {
@@ -53,6 +55,7 @@ class FileTreeRepository {
         }
     }
 
+    @NotNull
     public String hashTree(List<FileRef> refs) throws IOException {
         if (refs.isEmpty()) {
             throw new IllegalStateException("Cannot create empty file tree!");
@@ -63,6 +66,7 @@ class FileTreeRepository {
         }
     }
 
+    @NotNull
     private InputStream withMarker(InputStream data) throws IOException {
         return new SequenceInputStream(
             IOUtils.toInputStream(MARKER, ENCODING),

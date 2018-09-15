@@ -2,6 +2,7 @@ package ru.hse.spb.git;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,10 +36,12 @@ public class CommitRepository {
         return Files.exists(root.resolve(hash));
     }
 
+    @NotNull
     public String createCommit(String fileTreeHash, String message) throws IOException {
         return null;
     }
 
+    @NotNull
     public String hashCommit(String fileTreeHash, String message) throws IOException {
         return null;
     }

@@ -3,6 +3,7 @@ package ru.hse.spb.git;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +39,7 @@ class FileBlobRepository implements BlobRepository {
         return Files.exists(root.resolve(hash));
     }
 
+    @NotNull
     @Override
     public String createBlob(Path file) throws IOException {
         String hash = useFile(file, this::hashBlob);
@@ -54,6 +56,7 @@ class FileBlobRepository implements BlobRepository {
         return hash;
     }
 
+    @NotNull
     @Override
     public String hashBlob(InputStream blob) throws IOException {
         return DigestUtils.sha1Hex(withMarker(blob));
