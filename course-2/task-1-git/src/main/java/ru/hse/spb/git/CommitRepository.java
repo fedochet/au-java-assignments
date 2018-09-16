@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,7 +50,7 @@ public class CommitRepository {
         Path treeFile = Files.createFile(root.resolve(hash));
 
         try (InputStream inputStream = withMarker(encodeCommit(fileTreeHash, message))) {
-            Files.copy(inputStream, treeFile);
+            Files.copy(inputStream, treeFile, StandardCopyOption.REPLACE_EXISTING);
         }
 
         return new Commit(hash, fileTreeHash, message);
@@ -63,10 +64,13 @@ public class CommitRepository {
     }
 
     private InputStream encodeCommit(String fileTreeHash, String message) throws IOException {
-        return new SequenceInputStream(
-            IOUtils.toInputStream(String.format("tree %s", fileTreeHash), ENCODING),
-            IOUtils.toInputStream(message, ENCODING)
+        String encoded = String.join(
+            System.getProperty("line.separator"),
+            String.format("tree %s", fileTreeHash),
+            message
         );
+
+        return IOUtils.toInputStream(encoded, ENCODING);
     }
 
     private InputStream withMarker(InputStream blob) throws IOException {

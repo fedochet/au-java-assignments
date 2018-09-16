@@ -2,6 +2,7 @@ package ru.hse.spb.git;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,6 +11,7 @@ import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,7 +33,7 @@ class FileTreeRepository {
         Path blobFile = Files.createFile(root.resolve(hash));
 
         try (InputStream stream = withMarker(serializeReferences(refs))) {
-            Files.copy(stream, blobFile);
+            Files.copy(stream, blobFile, StandardCopyOption.REPLACE_EXISTING);
         }
 
         return new FileTree(hash, refs);

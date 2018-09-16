@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 @AllArgsConstructor
@@ -47,7 +48,7 @@ class FileBlobRepository {
         Path blobFile = Files.createFile(root.resolve(hash));
 
         try (InputStream stream = withMarker(Files.newInputStream(file))) {
-            Files.copy(stream, blobFile);
+            Files.copy(stream, blobFile, StandardCopyOption.REPLACE_EXISTING);
         }
 
         return hash;
