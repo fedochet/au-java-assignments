@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -18,7 +20,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class CommitRepository {
 
-    private static final String ENCODING = "UTF-8";
+    private static final Charset ENCODING = StandardCharsets.UTF_8;
     private static final String MARKER = "commit\0";
     private static final int MARKER_LENGTH = MARKER.getBytes().length;
 

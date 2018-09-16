@@ -2,13 +2,14 @@ package ru.hse.spb.git;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 class FileTreeRepository {
     private static final String MARKER = "tree\0";
     private static final int MARKER_LENGTH = MARKER.getBytes().length;
-    private static final String ENCODING = "UTF-8";
+    private static final Charset ENCODING = StandardCharsets.UTF_8;
     private final Path root;
 
     @NotNull
