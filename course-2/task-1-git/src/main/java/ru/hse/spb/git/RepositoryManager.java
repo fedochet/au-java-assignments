@@ -153,14 +153,24 @@ public class RepositoryManager {
         );
     }
 
-    private void checkFileTreeIsValid(FileTree fileTree) {
+    private void checkFileTreeIsValid(FileTree fileTree) throws IOException {
         for (FileRef child : fileTree.getChildren()) {
-            if (!blobRepository.exists(child.getHash())) {
-                throw new IllegalArgumentException(String.format(
-                    "File tree with hash %s is invalid; file reference %s points to non-existent file.",
-                    fileTree.getHash(),
-                    child
-                ));
+            if (child.getType().equals(FileRef.Type.REGULAR_FILE)) {
+                if (!blobRepository.exists(child.getHash())) {
+                    throw new IllegalArgumentException(String.format(
+                        "File tree with hash %s is invalid; file reference %s points to non-existent file.",
+                        fileTree.getHash(),
+                        child
+                    ));
+                }
+            } else {
+                if (!fileTreeRepository.exists(child.getHash())) {
+                    throw new IllegalArgumentException(String.format(
+                        "File tree with hash %s is invalid; tree reference %s points to non-existent file tree.",
+                        fileTree.getHash(),
+                        child
+                    ));
+                }
             }
         }
     }

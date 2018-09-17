@@ -36,8 +36,10 @@ class FileBlobRepository {
         return Optional.of(blobInputStream);
     }
 
-    public boolean exists(String hash) {
-        return Files.exists(root.resolve(hash));
+    public boolean exists(String hash) throws IOException {
+        Path blobFile = root.resolve(hash);
+
+        return Files.exists(blobFile) && MARKER.equals(readMarker(blobFile));
     }
 
     @NotNull
@@ -69,5 +71,15 @@ class FileBlobRepository {
             IOUtils.toInputStream(MARKER, ENCODING),
             blob
         );
+    }
+
+    @NotNull
+    private String readMarker(Path resolve) throws IOException {
+        try (InputStream inputStream = Files.newInputStream(resolve)) {
+            byte[] bytes = new byte[MARKER_LENGTH];
+            inputStream.read(bytes);
+
+            return new String(bytes, ENCODING);
+        }
     }
 }
