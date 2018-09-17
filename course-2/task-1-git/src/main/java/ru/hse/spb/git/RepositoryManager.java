@@ -1,6 +1,7 @@
 package ru.hse.spb.git;
 
 import lombok.Getter;
+import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -58,6 +59,25 @@ public class RepositoryManager {
         return commit.getHash();
     }
 
+    @NotNull
+    public List<Object> getLog() {
+        return Collections.emptyList();
+    }
+
+    public Optional<String> getHeadCommit() throws IOException {
+        String hash = FileUtils.readFileToString(head.toFile(), "UTF-8");
+        return Optional.of(hash).filter(s -> !s.isEmpty());
+    }
+
+    public void resetTo(String hash) throws IOException {
+        Commit targetCommit = commitRepository.getCommit(hash)
+            .orElseThrow(() -> new IllegalArgumentException("No commit with " + hash + " found!"));
+
+        FileTree fileTree = getExistingTree(targetCommit.getTreeHash());
+
+        restoreTreeInDir(fileTree, repositoryRoot);
+    }
+
     private void updateHead(Commit commit) throws IOException {
         FileUtils.write(head.toFile(), commit.getHash(), "UTF-8");
     }
@@ -98,20 +118,6 @@ public class RepositoryManager {
         }
 
         return Optional.of(fileTreeRepository.createTree(refs));
-    }
-
-    @NotNull
-    public List<Object> getLog() {
-        return Collections.emptyList();
-    }
-
-    public void resetTo(String hash) throws IOException {
-        Commit targetCommit = commitRepository.getCommit(hash)
-            .orElseThrow(() -> new IllegalArgumentException("No commit with " + hash + " found!"));
-
-        FileTree fileTree = getExistingTree(targetCommit.getTreeHash());
-
-        restoreTreeInDir(fileTree, repositoryRoot);
     }
 
     private void restoreTreeInDir(FileTree fileTree, Path dir) throws IOException {
@@ -159,20 +165,16 @@ public class RepositoryManager {
         }
     }
 
-    public Optional<String> getHeadCommit() throws IOException {
-        String hash = FileUtils.readFileToString(head.toFile(), "UTF-8");
-        return Optional.of(hash).filter(s -> !s.isEmpty());
-    }
-
-    interface IOPredicate<T> {
+    private interface IOPredicate<T> {
+        @SneakyThrows
         boolean test(T t) throws IOException;
     }
 
-    interface IOFunction<F, T> {
+    private interface IOFunction<F, T> {
         T apply(F t) throws IOException;
     }
 
-    <T> Predicate<T> ioPredicate(IOPredicate<T> p) {
+    private <T> Predicate<T> ioPredicate(IOPredicate<T> p) {
         return t -> {
             try {
                 return p.test(t);
@@ -182,7 +184,7 @@ public class RepositoryManager {
         };
     }
 
-    <F, T> Function<F, T> ioFunction(IOFunction<F, T> p) {
+    private <F, T> Function<F, T> ioFunction(IOFunction<F, T> p) {
         return t -> {
             try {
                 return p.apply(t);
