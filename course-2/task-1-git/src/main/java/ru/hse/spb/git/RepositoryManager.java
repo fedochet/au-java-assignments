@@ -90,6 +90,10 @@ public class RepositoryManager {
         return log;
     }
 
+    public List<CommitInfo> getLog(String hash) throws IOException {
+        return getLog();
+    }
+
     public Optional<String> getHeadCommit() throws IOException {
         String hash = FileUtils.readFileToString(head.toFile(), "UTF-8");
         return Optional.of(hash).filter(s -> !s.isEmpty());

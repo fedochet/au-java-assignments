@@ -31,7 +31,7 @@ class FileBlobRepository {
         }
 
         InputStream blobInputStream = Files.newInputStream(file);
-        assert MARKER_LENGTH == blobInputStream.skip(MARKER_LENGTH) : "No " + MARKER + " present in file!";
+        blobInputStream.skip(MARKER_LENGTH);
 
         return Optional.of(blobInputStream);
     }
@@ -66,7 +66,7 @@ class FileBlobRepository {
         }
     }
 
-    private InputStream withMarker(InputStream blob) throws IOException {
+    private InputStream withMarker(InputStream blob) {
         return new SequenceInputStream(
             IOUtils.toInputStream(MARKER, ENCODING),
             blob

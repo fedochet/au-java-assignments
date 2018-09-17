@@ -50,7 +50,7 @@ class FileTreeRepository {
         }
 
         try (InputStream inputStream = Files.newInputStream(root.resolve(hash))) {
-            assert MARKER_LENGTH == inputStream.skip(MARKER_LENGTH) : "No " + MARKER + " present in file!";
+            inputStream.skip(MARKER_LENGTH);
 
             List<FileRef> collect = deserializeReferences(inputStream);
 
@@ -70,7 +70,7 @@ class FileTreeRepository {
     }
 
     @NotNull
-    private InputStream withMarker(InputStream data) throws IOException {
+    private InputStream withMarker(InputStream data) {
         return new SequenceInputStream(
             IOUtils.toInputStream(MARKER, ENCODING),
             data

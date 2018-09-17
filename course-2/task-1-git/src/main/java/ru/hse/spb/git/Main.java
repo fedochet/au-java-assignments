@@ -14,6 +14,8 @@ import static picocli.CommandLine.Parameters;
 
 @Command(name = "log")
 class GitLog {
+    @Parameters(index = "0", arity = "0..1", description = "from commit")
+    String hash;
 }
 
 @Command(name = "init")
@@ -21,26 +23,34 @@ class GitInit {
 }
 
 @Command(name = "commit")
-@ToString
 class GitCommit {
-
-    @Parameters(index = "0", paramLabel = "FILE")
-    Path file;
-
-    @Parameters(index = "1", paramLabel = "MESSAGE")
+    @Parameters(index = "0", paramLabel = "MESSAGE")
     String message;
+    @Parameters(index = "1", paramLabel = "FILE")
+    Path file;
 }
 
-@Command(subcommands = {GitLog.class, GitInit.class, GitCommit.class})
+@Command(name = "checkout")
+class GitCheckout {
+    @Parameters(index = "0", paramLabel = "HASH")
+    String hash;
+}
+
+@Command(subcommands = {GitLog.class, GitInit.class, GitCommit.class, GitCheckout.class})
 class GitCommand {
 }
 
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        List<CommandLine> parse = new CommandLine(new GitCommand()).parse(args);
+        CommandLine commandLine = new CommandLine(new GitCommand());
+        List<CommandLine> parse = commandLine.parse(args);
 
-        executeGitCommand(parse.get(1), currentDir());
+        if (parse.size() == 2) {
+            executeGitCommand(parse.get(1), currentDir());
+        } else {
+            commandLine.usage(System.out);
+        }
     }
 
     private static void executeGitCommand(CommandLine commandLine, Path repositoryDir) throws IOException {
@@ -61,16 +71,23 @@ public class Main {
         RepositoryManager repository = possibleRepository.get();
 
         if (commandLine.getCommand() instanceof GitLog) {
-            for (CommitInfo commitInfo : repository.getLog()) {
+            GitLog logCommand = commandLine.getCommand();
+            List<CommitInfo> log = logCommand.hash != null ? repository.getLog(logCommand.hash) : repository.getLog();
+            for (CommitInfo commitInfo : log) {
                 System.out.println(commitInfo);
             }
-
             return;
         }
 
         if (commandLine.getCommand() instanceof GitCommit) {
             GitCommit commit = commandLine.getCommand();
             repository.commitFile(commit.file.toAbsolutePath(), commit.message);
+            return;
+        }
+
+        if (commandLine.getCommand() instanceof GitCheckout) {
+            GitCheckout checkout = commandLine.getCommand();
+            repository.checkoutTo(checkout.hash);
             return;
         }
     }

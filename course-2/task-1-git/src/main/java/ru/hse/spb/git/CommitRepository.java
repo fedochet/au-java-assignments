@@ -33,7 +33,7 @@ public class CommitRepository {
         }
 
         try (InputStream encodedCommit = Files.newInputStream(file)) {
-            assert MARKER_LENGTH == encodedCommit.skip(MARKER_LENGTH) : "No " + MARKER + " present in file!";
+            encodedCommit.skip(MARKER_LENGTH);
             return Optional.of(decodeCommit(hash, encodedCommit));
         }
     }
@@ -63,7 +63,7 @@ public class CommitRepository {
         }
     }
 
-    private InputStream encodeCommit(String fileTreeHash, String message, @Nullable String parentHash) throws IOException {
+    private InputStream encodeCommit(String fileTreeHash, String message, @Nullable String parentHash) {
         String encoded = String.join(
             System.getProperty("line.separator"),
             String.format("tree %s", fileTreeHash),
@@ -74,7 +74,7 @@ public class CommitRepository {
         return IOUtils.toInputStream(encoded, ENCODING);
     }
 
-    private InputStream withMarker(InputStream blob) throws IOException {
+    private InputStream withMarker(InputStream blob) {
         return new SequenceInputStream(
             IOUtils.toInputStream(MARKER, ENCODING),
             blob
