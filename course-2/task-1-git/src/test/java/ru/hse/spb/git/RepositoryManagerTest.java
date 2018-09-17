@@ -37,6 +37,16 @@ public class RepositoryManagerTest {
     }
 
     @Test
+    public void manager_can_use_already_initialized_dir() throws IOException {
+        Path newFile = createFile("new_file", "");
+        repository.commitFile(newFile, "first commit");
+
+        RepositoryManager alternativeRepository = new RepositoryManager(tempFolder.getRoot().toPath());
+
+        assertThat(alternativeRepository.getHeadCommit()).isEqualTo(repository.getHeadCommit());
+    }
+
+    @Test
     public void new_commit_becomes_head() throws IOException {
         Path newFile = createFile("new_file", "");
 

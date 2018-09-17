@@ -34,6 +34,9 @@ public class RepositoryManager {
         metadataDir = Files.createDirectories(repositoryRoot.resolve(".mygit"));
         objectsDir = Files.createDirectories(metadataDir.resolve("objects"));
         head = metadataDir.resolve("HEAD");
+        if (!Files.exists(head)) {
+            Files.createFile(head);
+        }
 
         blobRepository = new FileBlobRepository(objectsDir);
         fileTreeRepository = new FileTreeRepository(objectsDir);
@@ -65,7 +68,7 @@ public class RepositoryManager {
         );
     }
 
-    Optional<FileTree> buildTree(Path folder) throws IOException {
+    private Optional<FileTree> buildTree(Path folder) throws IOException {
         final List<Path> folderFiles;
 
         try (Stream<Path> list = Files.list(folder)) {
@@ -116,10 +119,11 @@ public class RepositoryManager {
 
         for (FileRef child : fileTree.getChildren()) {
             if (child.getType().equals(FileRef.Type.DIRECTORY)) {
-                Files.createDirectories(dir.resolve(child.getName()));
+                Path targetDir = dir.resolve(child.getName());
+                Files.createDirectories(targetDir);
                 FileTree childFileTree = getExistingTree(child.getHash());
 
-                restoreTreeInDir(childFileTree, dir.resolve(child.getName()));
+                restoreTreeInDir(childFileTree, targetDir);
             } else {
                 try (InputStream blobInputStream = getExistingBlob(child.getHash())) {
                     Path targetFile = dir.resolve(child.getName());
