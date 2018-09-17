@@ -56,13 +56,27 @@ public class RepositoryManagerTest {
     }
 
     @Test
+    public void new_commit_can_be_seen_in_log() throws IOException {
+        Path newFileOne = createFile("new_file_1", "file 1");
+        Path newFileTwo = createFile("new_file_2", "file 2");
+
+        String commitOne = repository.commitFile(newFileOne, "first commit");
+        String commitTwo = repository.commitFile(newFileTwo, "second commit");
+
+        assertThat(repository.getLog()).containsExactly(
+            new CommitInfo(commitTwo, "second commit"),
+            new CommitInfo(commitOne, "first commit")
+        );
+    }
+
+    @Test
     public void file_can_be_committed_and_then_restored() throws IOException {
         String newFileContent = "Hello world";
         Path newFile = createFile("new_file", newFileContent);
 
         String hash = repository.commitFile(newFile, "first commit");
         Files.delete(newFile);
-        repository.resetTo(hash);
+        repository.checkoutTo(hash);
 
         assertThat(newFile).hasContent(newFileContent);
     }
@@ -75,7 +89,7 @@ public class RepositoryManagerTest {
         String hash = repository.commitFile(newFileOne, "first commit");
         Files.delete(newFileOne);
         Files.delete(newFileTwo);
-        repository.resetTo(hash);
+        repository.checkoutTo(hash);
 
         assertThat(newFileTwo).doesNotExist();
     }
@@ -87,7 +101,7 @@ public class RepositoryManagerTest {
 
         String hash = repository.commitFile(newFile, "first commit");
         FileUtils.deleteDirectory(newFile.getParent().toFile());
-        repository.resetTo(hash);
+        repository.checkoutTo(hash);
 
         assertThat(newFile).hasContent(fileContent);
     }
@@ -101,7 +115,7 @@ public class RepositoryManagerTest {
         String hash = repository.commitFile(newFileOne, "first commit");
         Files.delete(newFileOne);
         Files.delete(newFileTwo);
-        repository.resetTo(hash);
+        repository.checkoutTo(hash);
 
         assertThat(newFileTwo).doesNotExist();
     }

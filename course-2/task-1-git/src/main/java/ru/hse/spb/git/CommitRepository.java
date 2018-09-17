@@ -3,7 +3,7 @@ package ru.hse.spb.git;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,33 +42,32 @@ public class CommitRepository {
         return Files.exists(root.resolve(hash));
     }
 
-    @NotNull
-    public Commit createCommit(String fileTreeHash, String message) throws IOException {
-        String hash = hashCommit(fileTreeHash, message);
+    public Commit createCommit(String fileTreeHash, String message, @Nullable String parentHash) throws IOException {
+        String hash = hashCommit(fileTreeHash, message, parentHash);
         if (exists(hash)) {
             throw new IllegalArgumentException("Commit with such " + hash + " already exists!");
         }
 
         Path treeFile = Files.createFile(root.resolve(hash));
 
-        try (InputStream inputStream = withMarker(encodeCommit(fileTreeHash, message))) {
+        try (InputStream inputStream = withMarker(encodeCommit(fileTreeHash, message, parentHash))) {
             Files.copy(inputStream, treeFile, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        return new Commit(hash, fileTreeHash, message);
+        return new Commit(hash, fileTreeHash, message, parentHash);
     }
 
-    @NotNull
-    public String hashCommit(String fileTreeHash, String message) throws IOException {
-        try (InputStream inputStream = withMarker(encodeCommit(fileTreeHash, message))) {
+    public String hashCommit(String fileTreeHash, String message, @Nullable String parentHash) throws IOException {
+        try (InputStream inputStream = withMarker(encodeCommit(fileTreeHash, message, parentHash))) {
             return DigestUtils.sha1Hex(inputStream);
         }
     }
 
-    private InputStream encodeCommit(String fileTreeHash, String message) throws IOException {
+    private InputStream encodeCommit(String fileTreeHash, String message, @Nullable String parentHash) throws IOException {
         String encoded = String.join(
             System.getProperty("line.separator"),
             String.format("tree %s", fileTreeHash),
+            parentHash != null ? String.format("parent %s", parentHash) : "",
             message
         );
 
@@ -87,8 +86,10 @@ public class CommitRepository {
 
         String treeLine = strings.get(0);
         String treeHash = treeLine.split(" ")[1];
-        String message = strings.stream().skip(1).collect(Collectors.joining(System.getProperty("line.separator")));
+        String parentLine = strings.get(1);
+        String parentHash = parentLine.isEmpty() ? null : parentLine.split(" ")[1];
+        String message = strings.stream().skip(2).collect(Collectors.joining(System.getProperty("line.separator")));
 
-        return new Commit(hash, treeHash, message);
+        return new Commit(hash, treeHash, message, parentHash);
     }
 }

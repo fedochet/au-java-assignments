@@ -10,10 +10,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -52,16 +49,25 @@ public class RepositoryManager {
 
         blobRepository.createBlob(newFile);
         String treeHash = buildRootTree().getHash();
-        Commit commit = commitRepository.createCommit(treeHash, commitMessage);
+        Commit commit = commitRepository.createCommit(treeHash, commitMessage, getHeadCommit().orElse(null));
 
         updateHead(commit);
 
         return commit.getHash();
     }
 
-    @NotNull
-    public List<Object> getLog() {
-        return Collections.emptyList();
+    public List<CommitInfo> getLog() throws IOException {
+        Optional<String> headCommit = getHeadCommit();
+        if (!headCommit.isPresent()) {
+            return Collections.emptyList();
+        }
+
+        List<CommitInfo> log = new ArrayList<>();
+        iterateFrom(headCommit.get()).forEachRemaining(c ->
+            log.add(new CommitInfo(c.getHash(), c.getMessage()))
+        );
+
+        return log;
     }
 
     public Optional<String> getHeadCommit() throws IOException {
@@ -69,13 +75,37 @@ public class RepositoryManager {
         return Optional.of(hash).filter(s -> !s.isEmpty());
     }
 
-    public void resetTo(String hash) throws IOException {
-        Commit targetCommit = commitRepository.getCommit(hash)
-            .orElseThrow(() -> new IllegalArgumentException("No commit with " + hash + " found!"));
+    public void checkoutTo(String hash) throws IOException {
+        Commit targetCommit = getExistingCommit(hash);
 
         FileTree fileTree = getExistingTree(targetCommit.getTreeHash());
 
         restoreTreeInDir(fileTree, repositoryRoot);
+    }
+
+    private Iterator<Commit> iterateFrom(String hash) throws IOException {
+        return new Iterator<Commit>() {
+            Commit next = commitRepository.getCommit(hash).orElse(null);
+
+            @Override
+            public boolean hasNext() {
+                return next != null;
+            }
+
+            @Override
+            @SneakyThrows
+            public Commit next() {
+                Commit current = next;
+                Optional<String> parent = next.getParentHash();
+                if (parent.isPresent()) {
+                    next = getExistingCommit(parent.get());
+                } else {
+                    next = null;
+                }
+
+                return current;
+            }
+        };
     }
 
     private void updateHead(Commit commit) throws IOException {
@@ -142,14 +172,21 @@ public class RepositoryManager {
     @NotNull
     private InputStream getExistingBlob(String hash) throws IOException {
         return blobRepository.getBlob(hash).orElseThrow(() ->
-            new IllegalArgumentException("No blob with hash " + hash + "found!")
+            new IllegalArgumentException("No blob with hash " + hash + " found!")
         );
     }
 
     @NotNull
     private FileTree getExistingTree(String hash) throws IOException {
         return fileTreeRepository.getTree(hash).orElseThrow(() ->
-            new IllegalArgumentException("No tree with hash " + hash + "found!")
+            new IllegalArgumentException("No tree with hash " + hash + " found!")
+        );
+    }
+
+    @NotNull
+    private Commit getExistingCommit(String hash) throws IOException {
+        return commitRepository.getCommit(hash).orElseThrow(() ->
+            new IllegalArgumentException("No commit with hash " + hash + " found!")
         );
     }
 
