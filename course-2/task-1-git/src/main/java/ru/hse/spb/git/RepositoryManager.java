@@ -48,7 +48,7 @@ public class RepositoryManager {
         }
 
         blobRepository.createBlob(newFile);
-        String treeHash = buildRootTree().getHash();
+        String treeHash = buildRootTree();
         Commit commit = commitRepository.createCommit(treeHash, commitMessage, getHeadCommit().orElse(null));
 
         updateHead(commit);
@@ -76,11 +76,14 @@ public class RepositoryManager {
     }
 
     public void checkoutTo(String hash) throws IOException {
+        Commit currentCommit = getExistingCommit(getHeadCommit().get());
         Commit targetCommit = getExistingCommit(hash);
 
-        FileTree fileTree = getExistingTree(targetCommit.getTreeHash());
+        FileTree currentFileTree = getExistingTree(currentCommit.getTreeHash());
+        FileTree targetFileTree = getExistingTree(targetCommit.getTreeHash());
 
-        restoreTreeInDir(fileTree, repositoryRoot);
+        removeTreeInDir(currentFileTree, repositoryRoot);
+        restoreTreeInDir(targetFileTree, repositoryRoot);
     }
 
     private Iterator<Commit> iterateFrom(String hash) throws IOException {
@@ -112,13 +115,13 @@ public class RepositoryManager {
         FileUtils.write(head.toFile(), commit.getHash(), "UTF-8");
     }
 
-    private FileTree buildRootTree() throws IOException {
+    private String buildRootTree() throws IOException {
         return buildTree(repositoryRoot).orElseThrow(() ->
             new IllegalArgumentException("Cannot build tree without files!")
         );
     }
 
-    private Optional<FileTree> buildTree(Path folder) throws IOException {
+    private Optional<String> buildTree(Path folder) throws IOException {
         final List<Path> folderFiles;
 
         try (Stream<Path> list = Files.list(folder)) {
@@ -132,8 +135,8 @@ public class RepositoryManager {
             String fileName = folderFile.getFileName().toString();
 
             if (Files.isDirectory(folderFile)) {
-                buildTree(folderFile).ifPresent(tree ->
-                    refs.add(new FileRef(tree.getHash(), FileRef.Type.DIRECTORY, fileName))
+                buildTree(folderFile).ifPresent(treeHash ->
+                    refs.add(new FileRef(treeHash, FileRef.Type.DIRECTORY, fileName))
                 );
             } else {
                 String blobHash = blobRepository.hashBlob(folderFile);
@@ -147,7 +150,33 @@ public class RepositoryManager {
             return Optional.empty();
         }
 
-        return Optional.of(fileTreeRepository.createTree(refs));
+        String treeHash = fileTreeRepository.hashTree(refs);
+        if (fileTreeRepository.exists(treeHash)) {
+            return Optional.of(treeHash);
+        }
+
+        return Optional.of(fileTreeRepository.createTree(refs).getHash());
+    }
+
+    private void removeTreeInDir(FileTree fileTree, Path dir) throws IOException {
+        checkFileTreeIsValid(fileTree);
+
+        for (FileRef child : fileTree.getChildren()) {
+            if (child.getType().equals(FileRef.Type.DIRECTORY)) {
+                Path targetDir = dir.resolve(child.getName());
+                Files.createDirectories(targetDir);
+                FileTree childFileTree = getExistingTree(child.getHash());
+
+                removeTreeInDir(childFileTree, targetDir);
+            } else {
+                // TODO 17.09.2018: reject checkout if file is removed
+                Files.deleteIfExists(dir.resolve(child.getName()));
+            }
+        }
+
+        if (Files.list(dir).count() == 0) {
+            Files.delete(dir);
+        }
     }
 
     private void restoreTreeInDir(FileTree fileTree, Path dir) throws IOException {

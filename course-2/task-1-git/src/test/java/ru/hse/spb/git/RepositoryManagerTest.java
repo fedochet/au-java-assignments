@@ -108,7 +108,7 @@ public class RepositoryManagerTest {
 
     @Test
     @Ignore("Currently this does not work because of no index")
-    public void files_with_same_content_are_not_comitted_at_once() throws IOException {
+    public void files_with_same_content_are_not_committed_at_once() throws IOException {
         Path newFileOne = createFile("new_file_1", "");
         Path newFileTwo = createFile("new_file_2", "");
 
@@ -118,6 +118,24 @@ public class RepositoryManagerTest {
         repository.checkoutTo(hash);
 
         assertThat(newFileTwo).doesNotExist();
+    }
+
+    @Test
+    public void files_in_two_directories_can_be_committed() throws IOException {
+        Path newFileOne = createFile(Paths.get("dir1", "new_file_1"), "file1");
+        Path newFileTwo = createFile(Paths.get("dir2", "new_file_2"), "file2");
+
+        String hashOne = repository.commitFile(newFileOne, "commit 1");
+        String hashTwo = repository.commitFile(newFileTwo, "commit 2");
+
+        repository.checkoutTo(hashOne);
+        assertThat(newFileOne).hasContent("file1");
+        assertThat(newFileTwo.getParent()).doesNotExist();
+
+        repository.checkoutTo(hashTwo);
+        assertThat(newFileOne).hasContent("file1");
+        assertThat(newFileTwo).hasContent("file2");
+
     }
 
     private Path createFile(Path file, String content) throws IOException {
