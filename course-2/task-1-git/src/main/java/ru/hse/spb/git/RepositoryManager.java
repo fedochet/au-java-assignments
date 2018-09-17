@@ -27,18 +27,38 @@ public class RepositoryManager {
     private final FileTreeRepository fileTreeRepository;
     private final CommitRepository commitRepository;
 
-    public RepositoryManager(Path repositoryRoot) throws IOException {
+    public RepositoryManager(Path repositoryRoot) {
         this.repositoryRoot = repositoryRoot;
-        metadataDir = Files.createDirectories(repositoryRoot.resolve(".mygit"));
-        objectsDir = Files.createDirectories(metadataDir.resolve("objects"));
+        metadataDir = repositoryRoot.resolve(".mygit");
+        objectsDir = metadataDir.resolve("objects");
         head = metadataDir.resolve("HEAD");
-        if (!Files.exists(head)) {
-            Files.createFile(head);
-        }
 
         blobRepository = new FileBlobRepository(objectsDir);
         fileTreeRepository = new FileTreeRepository(objectsDir);
         commitRepository = new CommitRepository(objectsDir);
+    }
+
+    public static RepositoryManager init(Path repositoryRoot) throws IOException {
+        Path metadataDir = Files.createDirectories(repositoryRoot.resolve(".mygit"));
+        Files.createDirectories(metadataDir.resolve("objects"));
+        Path head = metadataDir.resolve("HEAD");
+        if (!Files.exists(head)) {
+            Files.createFile(head);
+        }
+
+        return new RepositoryManager(repositoryRoot);
+    }
+
+    public static Optional<RepositoryManager> open(Path repositoryRoot) {
+        Path metadataDir = repositoryRoot.resolve(".mygit");
+        Path objectsDir = metadataDir.resolve("objects");
+        Path head = metadataDir.resolve("HEAD");
+
+        if (Files.exists(metadataDir) && Files.exists(objectsDir) && Files.exists(head)) {
+            return Optional.of(new RepositoryManager(repositoryRoot));
+        }
+
+        return Optional.empty();
     }
 
     public String commitFile(Path newFile, String commitMessage) throws IOException {

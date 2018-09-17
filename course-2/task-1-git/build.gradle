@@ -1,7 +1,10 @@
 plugins {
     id 'java'
+    id 'application'
     id 'net.ltgt.apt' version '0.10'
 }
+
+mainClassName = "ru.hse.spb.git.Main"
 
 group 'ru.hse.spb'
 version '1.0-SNAPSHOT'
@@ -16,6 +19,7 @@ repositories {
 dependencies {
     compile group: 'commons-codec', name: 'commons-codec', version: '1.11'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    compile group: 'info.picocli', name: 'picocli', version: '3.6.0'
 
     compile group: 'org.jetbrains', name: 'annotations', version: '16.0.2'
 
