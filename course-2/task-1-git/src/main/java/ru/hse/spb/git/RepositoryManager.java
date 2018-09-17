@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +47,7 @@ public class RepositoryManager {
         }
 
         blobRepository.createBlob(newFile);
-        String treeHash = buildTree();
+        String treeHash = buildRootTree().getHash();
         Commit commit = commitRepository.createCommit(treeHash, commitMessage);
 
         updateHead(commit);
@@ -58,26 +59,42 @@ public class RepositoryManager {
         FileUtils.write(head.toFile(), commit.getHash(), "UTF-8");
     }
 
-    private String buildTree() throws IOException {
-        final List<Path> rootFiles;
+    private FileTree buildRootTree() throws IOException {
+        return buildTree(repositoryRoot).orElseThrow(() ->
+            new IllegalArgumentException("Cannot build tree without files!")
+        );
+    }
 
-        try (Stream<Path> list = Files.list(repositoryRoot)) {
-            rootFiles = list.filter(ioPredicate(f -> !Files.isSameFile(f, metadataDir)))
-                .filter(f -> !Files.isDirectory(f))
+    Optional<FileTree> buildTree(Path folder) throws IOException {
+        final List<Path> folderFiles;
+
+        try (Stream<Path> list = Files.list(folder)) {
+            folderFiles = list
+                .filter(ioPredicate(f -> !Files.isSameFile(f, metadataDir)))
                 .collect(Collectors.toList());
         }
 
-        List<FileRef> rootFilesRefs = rootFiles.stream()
-            .filter(ioPredicate(f -> blobRepository.exists(blobRepository.hashBlob(f))))
-            .map(ioFunction(f -> new FileRef(
-                blobRepository.hashBlob(f),
-                FileRef.Type.REGULAR_FILE,
-                f.getFileName().toString())
-            ))
-            .collect(Collectors.toList());
+        List<FileRef> refs = new ArrayList<>();
+        for (Path folderFile : folderFiles) {
+            String fileName = folderFile.getFileName().toString();
 
-        return fileTreeRepository.createTree(rootFilesRefs).getHash();
+            if (Files.isDirectory(folderFile)) {
+                buildTree(folderFile).ifPresent(tree ->
+                    refs.add(new FileRef(tree.getHash(), FileRef.Type.DIRECTORY, fileName))
+                );
+            } else {
+                String blobHash = blobRepository.hashBlob(folderFile);
+                if (blobRepository.exists(blobHash)) {
+                    refs.add(new FileRef(blobHash, FileRef.Type.REGULAR_FILE, fileName));
+                }
+            }
+        }
 
+        if (refs.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(fileTreeRepository.createTree(refs));
     }
 
     @NotNull
@@ -89,21 +106,41 @@ public class RepositoryManager {
         Commit targetCommit = commitRepository.getCommit(hash)
             .orElseThrow(() -> new IllegalArgumentException("No commit with " + hash + " found!"));
 
-        FileTree fileTree = fileTreeRepository.getTree(targetCommit.getTreeHash())
-            .orElseThrow(() -> new IllegalArgumentException("No tree with hash " + hash + "found!"));
+        FileTree fileTree = getExistingTree(targetCommit.getTreeHash());
 
+        restoreTreeInDir(fileTree, repositoryRoot);
+    }
+
+    private void restoreTreeInDir(FileTree fileTree, Path dir) throws IOException {
         checkFileTreeIsValid(fileTree);
 
         for (FileRef child : fileTree.getChildren()) {
             if (child.getType().equals(FileRef.Type.DIRECTORY)) {
-                continue;
-            }
+                Files.createDirectories(dir.resolve(child.getName()));
+                FileTree childFileTree = getExistingTree(child.getHash());
 
-            try (InputStream blobInputStream = blobRepository.getBlob(child.getHash()).get()) {
-                Path targetFile = repositoryRoot.resolve(child.getName());
-                Files.copy(blobInputStream, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                restoreTreeInDir(childFileTree, dir.resolve(child.getName()));
+            } else {
+                try (InputStream blobInputStream = getExistingBlob(child.getHash())) {
+                    Path targetFile = dir.resolve(child.getName());
+                    Files.copy(blobInputStream, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                }
             }
         }
+    }
+
+    @NotNull
+    private InputStream getExistingBlob(String hash) throws IOException {
+        return blobRepository.getBlob(hash).orElseThrow(() ->
+            new IllegalArgumentException("No blob with hash " + hash + "found!")
+        );
+    }
+
+    @NotNull
+    private FileTree getExistingTree(String hash) throws IOException {
+        return fileTreeRepository.getTree(hash).orElseThrow(() ->
+            new IllegalArgumentException("No tree with hash " + hash + "found!")
+        );
     }
 
     private void checkFileTreeIsValid(FileTree fileTree) {

@@ -2,7 +2,6 @@ package ru.hse.spb.git;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -12,6 +11,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -31,6 +31,7 @@ public class RepositoryManagerTest {
         assertThat(repository.getLog()).isEmpty();
     }
 
+    @Test
     public void head_of_empty_repository_does_not_exisit() throws IOException {
         assertThat(repository.getHeadCommit()).isEmpty();
     }
@@ -45,7 +46,7 @@ public class RepositoryManagerTest {
     }
 
     @Test
-    public void file_can_be_commited_and_then_restored() throws IOException {
+    public void file_can_be_committed_and_then_restored() throws IOException {
         String newFileContent = "Hello world";
         Path newFile = createFile("new_file", newFileContent);
 
@@ -56,9 +57,56 @@ public class RepositoryManagerTest {
         assertThat(newFile).hasContent(newFileContent);
     }
 
+    @Test
+    public void not_committed_files_are_not_restored() throws IOException {
+        Path newFileOne = createFile("new_file_1", "file 1");
+        Path newFileTwo = createFile("new_file_2", "file 2");
+
+        String hash = repository.commitFile(newFileOne, "first commit");
+        Files.delete(newFileOne);
+        Files.delete(newFileTwo);
+        repository.resetTo(hash);
+
+        assertThat(newFileTwo).doesNotExist();
+    }
+
+    @Test
+    public void file_in_directory_can_be_committed() throws IOException {
+        String fileContent = "file 1";
+        Path newFile = createFile(Paths.get("dir", "new_file"), fileContent);
+
+        String hash = repository.commitFile(newFile, "first commit");
+        FileUtils.deleteDirectory(newFile.getParent().toFile());
+        repository.resetTo(hash);
+
+        assertThat(newFile).hasContent(fileContent);
+    }
+
+    @Test
+    @Ignore("Currently this does not work because of no index")
+    public void files_with_same_content_are_not_comitted_at_once() throws IOException {
+        Path newFileOne = createFile("new_file_1", "");
+        Path newFileTwo = createFile("new_file_2", "");
+
+        String hash = repository.commitFile(newFileOne, "first commit");
+        Files.delete(newFileOne);
+        Files.delete(newFileTwo);
+        repository.resetTo(hash);
+
+        assertThat(newFileTwo).doesNotExist();
+    }
+
+    private Path createFile(Path file, String content) throws IOException {
+        Path newFile = tempFolder.getRoot().toPath().resolve(file);
+        Files.createDirectories(newFile.getParent());
+        IOUtils.write(content, Files.newOutputStream(newFile), "UTF-8");
+
+        return newFile;
+    }
+
     private Path createFile(String name, String content) throws IOException {
         Path file = tempFolder.newFile(name).toPath();
-        IOUtils.write(content, Files.newOutputStream(file), "UTF-8");
+        FileUtils.write(file.toFile(), content, "UTF-8");
 
         return file;
     }
