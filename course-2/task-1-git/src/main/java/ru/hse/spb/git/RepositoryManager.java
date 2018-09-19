@@ -27,7 +27,7 @@ public class RepositoryManager {
     private final FileTreeRepository fileTreeRepository;
     private final CommitRepository commitRepository;
 
-    public RepositoryManager(Path repositoryRoot) {
+    private RepositoryManager(Path repositoryRoot) {
         this.repositoryRoot = repositoryRoot;
         metadataDir = repositoryRoot.resolve(".mygit");
         objectsDir = metadataDir.resolve("objects");

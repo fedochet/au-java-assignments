@@ -23,7 +23,7 @@ public class RepositoryManagerTest {
 
     @Before
     public void initRepository() throws IOException {
-        repository = new RepositoryManager(tempFolder.getRoot().toPath());
+        repository = RepositoryManager.init(tempFolder.getRoot().toPath());
     }
 
     @Test
@@ -41,7 +41,7 @@ public class RepositoryManagerTest {
         Path newFile = createFile("new_file", "");
         repository.commitFile(newFile, "first commit");
 
-        RepositoryManager alternativeRepository = new RepositoryManager(tempFolder.getRoot().toPath());
+        RepositoryManager alternativeRepository = RepositoryManager.open(tempFolder.getRoot().toPath()).get();
 
         assertThat(alternativeRepository.getHeadCommit()).isEqualTo(repository.getHeadCommit());
     }
