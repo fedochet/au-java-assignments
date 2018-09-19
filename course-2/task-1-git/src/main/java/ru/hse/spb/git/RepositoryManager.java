@@ -82,12 +82,9 @@ public class RepositoryManager {
             return Collections.emptyList();
         }
 
-        List<CommitInfo> log = new ArrayList<>();
-        iterateFrom(headCommit.get()).forEachRemaining(c ->
-            log.add(new CommitInfo(c.getHash(), c.getMessage()))
-        );
-
-        return log;
+        return commitsFrom(headCommit.get())
+            .map(c -> new CommitInfo(c.getHash(), c.getMessage()))
+            .collect(Collectors.toList());
     }
 
     public List<CommitInfo> getLog(String hash) throws IOException {
@@ -110,29 +107,11 @@ public class RepositoryManager {
         restoreTreeInDir(targetFileTree, repositoryRoot);
     }
 
-    private Iterator<Commit> iterateFrom(String hash) throws IOException {
-        return new Iterator<Commit>() {
-            Commit next = commitRepository.getCommit(hash).orElse(null);
-
-            @Override
-            public boolean hasNext() {
-                return next != null;
-            }
-
-            @Override
-            @SneakyThrows
-            public Commit next() {
-                Commit current = next;
-                Optional<String> parent = next.getParentHash();
-                if (parent.isPresent()) {
-                    next = getExistingCommit(parent.get());
-                } else {
-                    next = null;
-                }
-
-                return current;
-            }
-        };
+    private Stream<Commit> commitsFrom(String hash) throws IOException {
+        return CollectionUtils.generateStream(
+            commitRepository.getCommit(hash).orElse(null),
+            c -> c.getParentHash().map(ioFunction(this::getExistingCommit))
+        );
     }
 
     private void updateHead(Commit commit) throws IOException {
