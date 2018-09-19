@@ -1,7 +1,7 @@
 package ru.hse.spb.git;
 
-import lombok.ToString;
 import picocli.CommandLine;
+import ru.hse.spb.git.commit.CommitInfo;
 
 import java.io.IOException;
 import java.nio.file.Path;

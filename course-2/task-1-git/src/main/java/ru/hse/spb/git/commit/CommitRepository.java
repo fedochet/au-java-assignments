@@ -1,4 +1,4 @@
-package ru.hse.spb.git;
+package ru.hse.spb.git.commit;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;

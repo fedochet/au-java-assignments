@@ -7,6 +7,7 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import ru.hse.spb.git.commit.CommitInfo;
 
 import java.io.IOException;
 import java.nio.file.Files;

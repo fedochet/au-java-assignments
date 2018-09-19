@@ -4,6 +4,13 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+import ru.hse.spb.git.blob.FileBlobRepository;
+import ru.hse.spb.git.commit.Commit;
+import ru.hse.spb.git.commit.CommitInfo;
+import ru.hse.spb.git.commit.CommitRepository;
+import ru.hse.spb.git.filetree.FileRef;
+import ru.hse.spb.git.filetree.FileTree;
+import ru.hse.spb.git.filetree.FileTreeRepository;
 
 import java.io.IOException;
 import java.io.InputStream;

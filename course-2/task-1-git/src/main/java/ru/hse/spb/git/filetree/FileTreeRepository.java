@@ -1,4 +1,4 @@
-package ru.hse.spb.git;
+package ru.hse.spb.git.filetree;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
-class FileTreeRepository {
+public class FileTreeRepository {
     private static final String MARKER = "tree\0";
     private static final int MARKER_LENGTH = MARKER.getBytes().length;
     private static final Charset ENCODING = StandardCharsets.UTF_8;

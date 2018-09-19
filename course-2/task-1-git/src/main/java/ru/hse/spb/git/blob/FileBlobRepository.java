@@ -1,4 +1,4 @@
-package ru.hse.spb.git;
+package ru.hse.spb.git.blob;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -16,7 +16,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 @AllArgsConstructor
-class FileBlobRepository {
+public class FileBlobRepository {
 
     private static final Charset ENCODING = StandardCharsets.UTF_8;
     private static final String MARKER = "file\0";

@@ -1,9 +1,9 @@
-package ru.hse.spb.git;
+package ru.hse.spb.git.filetree;
 
 import lombok.Data;
 
 @Data
-final class FileRef {
+public final class FileRef {
     public enum Type {
         REGULAR_FILE, DIRECTORY
     }
