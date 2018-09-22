@@ -18,10 +18,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static ru.hse.spb.git.CollectionUtils.ioFunction;
+import static ru.hse.spb.git.CollectionUtils.ioPredicate;
 
 public class RepositoryManager {
     @Getter
@@ -251,32 +252,4 @@ public class RepositoryManager {
         }
     }
 
-    private interface IOPredicate<T> {
-        @SneakyThrows
-        boolean test(T t) throws IOException;
-    }
-
-    private interface IOFunction<F, T> {
-        T apply(F t) throws IOException;
-    }
-
-    private <T> Predicate<T> ioPredicate(IOPredicate<T> p) {
-        return t -> {
-            try {
-                return p.test(t);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        };
-    }
-
-    private <F, T> Function<F, T> ioFunction(IOFunction<F, T> p) {
-        return t -> {
-            try {
-                return p.apply(t);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        };
-    }
 }
