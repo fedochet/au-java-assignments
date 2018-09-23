@@ -1,5 +1,6 @@
 package ru.hse.spb.git.index;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.io.IOUtils;
 
@@ -10,19 +11,28 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static ru.hse.spb.git.CollectionUtils.ioPredicate;
+import static ru.hse.spb.git.CollectionUtils.toStream;
 
 @Data
 class IndexRecord {
-    private final Path path;
     private final String hash;
+    private final List<String> pathParts;
+
+    Path getPath() {
+        return Paths.get("", pathParts.toArray(new String[0]));
+    }
+
+    static IndexRecord fromPath(String hash, Path path) {
+        return new IndexRecord(
+            hash,
+            toStream(path.iterator()).map(Path::toString).collect(Collectors.toList())
+        );
+    }
 }
 
 public class IndexManager {
@@ -40,8 +50,8 @@ public class IndexManager {
         List<String> serialized = records.stream()
             .map(record -> String.format(
                 "%s %s",
-                record.getPath().relativize(repositoryRoot).toString(),
-                record.getHash()
+                record.getHash(),
+                String.join("/", record.getPathParts())
             ))
             .collect(Collectors.toList());
 
@@ -59,7 +69,7 @@ public class IndexManager {
     public Optional<IndexRecord> get(Path path) throws IOException {
         try (Stream<IndexRecord> indexEntries = getIndexEntries()) {
             return indexEntries
-                .filter(ioPredicate(record -> Files.isSameFile(record.getPath(), path)))
+                .filter(ioPredicate(record -> Files.isSameFile(repositoryRoot.resolve(record.getPath()), path)))
                 .findFirst();
         }
     }
@@ -68,18 +78,20 @@ public class IndexManager {
         final List<IndexRecord> collect;
         try (Stream<IndexRecord> indexEntries = getIndexEntries()) {
             collect = indexEntries
-                .filter(ioPredicate(record -> !Files.isSameFile(record.getPath(), path)))
+                .filter(ioPredicate(record -> !Files.isSameFile(repositoryRoot.resolve(record.getPath()), path)))
                 .collect(Collectors.toCollection(ArrayList::new));
         }
 
-        collect.add(new IndexRecord(path, hash));
+        collect.add(IndexRecord.fromPath(hash, repositoryRoot.relativize(path)));
+
         updateIndex(collect);
     }
 
     private Stream<IndexRecord> getIndexEntries() throws IOException {
         return Files.lines(indexFile, ENCODING).map(line -> {
             String[] splitted = line.split(" ", 2);
-            return new IndexRecord(Paths.get(splitted[1]), splitted[2]);
+            List<String> pathParts = Arrays.asList(splitted[1].split("/"));
+            return new IndexRecord(splitted[0], pathParts);
         });
     }
 }

@@ -108,7 +108,6 @@ public class RepositoryManagerTest {
     }
 
     @Test
-    @Ignore("Currently this does not work because of no Index")
     public void files_with_same_content_are_not_committed_at_once() throws IOException {
         Path newFileOne = createFile("new_file_1", "");
         Path newFileTwo = createFile("new_file_2", "");

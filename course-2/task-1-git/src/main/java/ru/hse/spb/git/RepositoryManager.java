@@ -1,7 +1,6 @@
 package ru.hse.spb.git;
 
 import lombok.Getter;
-import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import ru.hse.spb.git.blob.FileBlobRepository;
@@ -11,6 +10,7 @@ import ru.hse.spb.git.commit.CommitRepository;
 import ru.hse.spb.git.filetree.FileRef;
 import ru.hse.spb.git.filetree.FileTree;
 import ru.hse.spb.git.filetree.FileTreeRepository;
+import ru.hse.spb.git.index.IndexManager;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,16 +34,20 @@ public class RepositoryManager {
     private final FileBlobRepository blobRepository;
     private final FileTreeRepository fileTreeRepository;
     private final CommitRepository commitRepository;
+    private final IndexManager indexManager;
+    private final Path index;
 
     private RepositoryManager(Path repositoryRoot) {
         this.repositoryRoot = repositoryRoot;
         metadataDir = repositoryRoot.resolve(".mygit");
         objectsDir = metadataDir.resolve("objects");
         head = metadataDir.resolve("HEAD");
+        index = metadataDir.resolve("index");
 
         blobRepository = new FileBlobRepository(objectsDir);
         fileTreeRepository = new FileTreeRepository(objectsDir);
         commitRepository = new CommitRepository(objectsDir);
+        indexManager = new IndexManager(repositoryRoot, index);
     }
 
     public static RepositoryManager init(Path repositoryRoot) throws IOException {
@@ -54,6 +58,11 @@ public class RepositoryManager {
             Files.createFile(head);
         }
 
+        Path index = metadataDir.resolve("index");
+        if (!Files.exists(index)) {
+            Files.createFile(index);
+        }
+
         return new RepositoryManager(repositoryRoot);
     }
 
@@ -61,8 +70,9 @@ public class RepositoryManager {
         Path metadataDir = repositoryRoot.resolve(".mygit");
         Path objectsDir = metadataDir.resolve("objects");
         Path head = metadataDir.resolve("HEAD");
+        Path index = metadataDir.resolve("index");
 
-        if (Files.exists(metadataDir) && Files.exists(objectsDir) && Files.exists(head)) {
+        if (Files.exists(metadataDir) && Files.exists(objectsDir) && Files.exists(head) && Files.exists(index)) {
             return Optional.of(new RepositoryManager(repositoryRoot));
         }
 
@@ -72,10 +82,14 @@ public class RepositoryManager {
     public String commitFile(Path newFile, String commitMessage) throws IOException {
         String hash = blobRepository.hashBlob(newFile);
         if (blobRepository.exists(hash)) {
+            if (!indexManager.get(newFile).isPresent()) {
+                indexManager.set(newFile, hash);
+            }
             return hash;
         }
 
         blobRepository.createBlob(newFile);
+        indexManager.set(newFile, hash);
         String treeHash = buildRootTree();
         Commit commit = commitRepository.createCommit(treeHash, commitMessage, getHeadCommit().orElse(null));
 
@@ -151,7 +165,7 @@ public class RepositoryManager {
                 );
             } else {
                 String blobHash = blobRepository.hashBlob(folderFile);
-                if (blobRepository.exists(blobHash)) {
+                if (blobRepository.exists(blobHash) && indexManager.get(folderFile).isPresent()) {
                     refs.add(new FileRef(blobHash, FileRef.Type.REGULAR_FILE, fileName));
                 }
             }
