@@ -81,10 +81,8 @@ public class RepositoryManager {
 
     public String commitFile(Path newFile, String commitMessage) throws IOException {
         String hash = blobRepository.hashBlob(newFile);
+        addFileToIndex(newFile);
         if (blobRepository.exists(hash)) {
-            if (!indexManager.get(newFile).isPresent()) {
-                indexManager.set(newFile, hash);
-            }
             return hash;
         }
 
@@ -129,6 +127,11 @@ public class RepositoryManager {
         restoreTreeInDir(targetFileTree, repositoryRoot);
     }
 
+    private void addFileToIndex(Path newFile) throws IOException {
+        String hash = blobRepository.hashBlob(newFile);
+        indexManager.set(newFile, hash);
+    }
+
     private Stream<Commit> commitsFrom(String hash) throws IOException {
         return CollectionUtils.generateStream(
             commitRepository.getCommit(hash).orElse(null),
@@ -165,7 +168,7 @@ public class RepositoryManager {
                 );
             } else {
                 String blobHash = blobRepository.hashBlob(folderFile);
-                if (blobRepository.exists(blobHash) && indexManager.get(folderFile).isPresent()) {
+                if (indexManager.get(folderFile).isPresent()) {
                     refs.add(new FileRef(blobHash, FileRef.Type.REGULAR_FILE, fileName));
                 }
             }
