@@ -3,7 +3,6 @@ package ru.hse.spb.git;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -77,7 +76,7 @@ public class RepositoryManagerTest {
 
         String hash = repository.commitFile(newFile, "first commit");
         Files.delete(newFile);
-        repository.checkoutTo(hash);
+        repository.checkoutToCommit(hash);
 
         assertThat(newFile).hasContent(newFileContent);
     }
@@ -90,7 +89,7 @@ public class RepositoryManagerTest {
         String hash = repository.commitFile(newFileOne, "first commit");
         Files.delete(newFileOne);
         Files.delete(newFileTwo);
-        repository.checkoutTo(hash);
+        repository.checkoutToCommit(hash);
 
         assertThat(newFileTwo).doesNotExist();
     }
@@ -102,7 +101,7 @@ public class RepositoryManagerTest {
 
         String hash = repository.commitFile(newFile, "first commit");
         FileUtils.deleteDirectory(newFile.getParent().toFile());
-        repository.checkoutTo(hash);
+        repository.checkoutToCommit(hash);
 
         assertThat(newFile).hasContent(fileContent);
     }
@@ -115,7 +114,7 @@ public class RepositoryManagerTest {
         String hash = repository.commitFile(newFileOne, "first commit");
         Files.delete(newFileOne);
         Files.delete(newFileTwo);
-        repository.checkoutTo(hash);
+        repository.checkoutToCommit(hash);
 
         assertThat(newFileTwo).doesNotExist();
     }
@@ -128,11 +127,11 @@ public class RepositoryManagerTest {
         String hashOne = repository.commitFile(newFileOne, "commit 1");
         String hashTwo = repository.commitFile(newFileTwo, "commit 2");
 
-        repository.checkoutTo(hashOne);
+        repository.checkoutToCommit(hashOne);
         assertThat(newFileOne).hasContent("file1");
         assertThat(newFileTwo.getParent()).doesNotExist();
 
-        repository.checkoutTo(hashTwo);
+        repository.checkoutToCommit(hashTwo);
         assertThat(newFileOne).hasContent("file1");
         assertThat(newFileTwo).hasContent("file2");
 
@@ -151,6 +150,19 @@ public class RepositoryManagerTest {
     }
 
     @Test
+    public void after_reset_master_head_is_changed() throws IOException {
+        Path newFileOne = createFile("new_file_1", "file1");
+        Path newFileTwo = createFile("new_file_2", "file2");
+
+        String hashOne = repository.commitFile(newFileOne, "commit 1");
+        repository.commitFile(newFileTwo, "commit 2");
+
+        repository.resetTo(hashOne);
+
+        assertThat(repository.getMasterHeadCommit()).contains(hashOne);
+    }
+
+    @Test
     public void after_checkout_head_is_set_to_commit_hash() throws IOException {
         Path newFileOne = createFile("new_file_1", "file1");
         Path newFileTwo = createFile("new_file_2", "file2");
@@ -158,8 +170,22 @@ public class RepositoryManagerTest {
         String hashOne = repository.commitFile(newFileOne, "commit 1");
         repository.commitFile(newFileTwo, "commit 2");
 
-        repository.checkoutTo(hashOne);
+        repository.checkoutToCommit(hashOne);
+
         assertThat(repository.getHeadCommit()).contains(hashOne);
+    }
+
+    @Test
+    public void after_checkout_master_head_is_not_changed() throws IOException {
+        Path newFileOne = createFile("new_file_1", "file1");
+        Path newFileTwo = createFile("new_file_2", "file2");
+
+        String hashOne = repository.commitFile(newFileOne, "commit 1");
+        String hashTwo = repository.commitFile(newFileTwo, "commit 2");
+
+        repository.checkoutToCommit(hashOne);
+
+        assertThat(repository.getMasterHeadCommit()).contains(hashTwo);
     }
 
     private Path createFile(Path file, String content) throws IOException {

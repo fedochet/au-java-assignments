@@ -93,7 +93,7 @@ public class Main {
 
         if (commandLine.getCommand() instanceof GitCheckout) {
             GitCheckout checkout = commandLine.getCommand();
-            repository.checkoutTo(checkout.hash);
+            repository.checkoutToCommit(checkout.hash);
             return;
         }
 

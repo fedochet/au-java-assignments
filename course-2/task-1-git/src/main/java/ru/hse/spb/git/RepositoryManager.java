@@ -14,6 +14,8 @@ import ru.hse.spb.git.index.IndexManager;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -25,6 +27,7 @@ import static ru.hse.spb.git.CollectionUtils.ioFunction;
 import static ru.hse.spb.git.CollectionUtils.ioPredicate;
 
 public class RepositoryManager {
+    private static final Charset ENCODING = StandardCharsets.UTF_8;
     @Getter
     private final Path repositoryRoot;
     private final Path metadataDir;
@@ -35,6 +38,7 @@ public class RepositoryManager {
     private final FileTreeRepository fileTreeRepository;
     private final CommitRepository commitRepository;
     private final IndexManager indexManager;
+    private final Path masterHead;
     private final Path index;
 
     private RepositoryManager(Path repositoryRoot) {
@@ -42,6 +46,7 @@ public class RepositoryManager {
         metadataDir = repositoryRoot.resolve(".mygit");
         objectsDir = metadataDir.resolve("objects");
         head = metadataDir.resolve("HEAD");
+        masterHead = metadataDir.resolve("masterHEAD");
         index = metadataDir.resolve("index");
 
         blobRepository = new FileBlobRepository(objectsDir);
@@ -55,7 +60,12 @@ public class RepositoryManager {
         Files.createDirectories(metadataDir.resolve("objects"));
         Path head = metadataDir.resolve("HEAD");
         if (!Files.exists(head)) {
-            Files.createFile(head);
+            FileUtils.write(head.toFile(), "master", ENCODING);
+        }
+
+        Path masterHead = metadataDir.resolve("masterHEAD");
+        if (!Files.exists(masterHead)) {
+            Files.createFile(masterHead);
         }
 
         Path index = metadataDir.resolve("index");
@@ -70,9 +80,10 @@ public class RepositoryManager {
         Path metadataDir = repositoryRoot.resolve(".mygit");
         Path objectsDir = metadataDir.resolve("objects");
         Path head = metadataDir.resolve("HEAD");
+        Path masterHead = metadataDir.resolve("masterHEAD");
         Path index = metadataDir.resolve("index");
 
-        if (Files.exists(metadataDir) && Files.exists(objectsDir) && Files.exists(head) && Files.exists(index)) {
+        if (Stream.of(metadataDir, objectsDir, head, masterHead, index).allMatch(Files::exists)) {
             return Optional.of(new RepositoryManager(repositoryRoot));
         }
 
@@ -91,9 +102,17 @@ public class RepositoryManager {
         String treeHash = buildRootTree();
         Commit commit = commitRepository.createCommit(treeHash, commitMessage, getHeadCommit().orElse(null));
 
-        updateHead(commit);
+        if (onTipOfTheMaster()) {
+            updateMasterHead(commit);
+        } else {
+            updateHead(commit);
+        }
 
         return commit.getHash();
+    }
+
+    private boolean onTipOfTheMaster() throws IOException {
+        return getHeadCommit().equals(getMasterHeadCommit());
     }
 
     public List<CommitInfo> getLog() throws IOException {
@@ -115,10 +134,15 @@ public class RepositoryManager {
 
     public Optional<String> getHeadCommit() throws IOException {
         String hash = FileUtils.readFileToString(head.toFile(), "UTF-8");
-        return Optional.of(hash).filter(s -> !s.isEmpty());
+
+        if (hash.equals("master")) {
+            return getMasterHeadCommit();
+        }
+
+        return Optional.of(hash);
     }
 
-    public void checkoutTo(String hash) throws IOException {
+    public void checkoutToCommit(String hash) throws IOException {
         Commit currentCommit = getExistingCommit(getHeadCommit().get());
         Commit targetCommit = getExistingCommit(hash);
 
@@ -131,8 +155,15 @@ public class RepositoryManager {
         updateHead(getExistingCommit(hash));
     }
 
+    public Optional<String> getMasterHeadCommit() throws IOException {
+        String hash = FileUtils.readFileToString(masterHead.toFile(), "UTF-8");
+
+        return Optional.of(hash).filter(s -> !s.isEmpty());
+    }
+
     public void resetTo(String hash) throws IOException {
-        checkoutTo(hash);
+        checkoutToCommit(hash);
+        updateMasterHead(getExistingCommit(hash));
     }
 
     private void addFileToIndex(Path newFile) throws IOException {
@@ -149,6 +180,11 @@ public class RepositoryManager {
 
     private void updateHead(Commit commit) throws IOException {
         FileUtils.write(head.toFile(), commit.getHash(), "UTF-8");
+    }
+
+
+    private void updateMasterHead(Commit commit) throws IOException {
+        FileUtils.write(masterHead.toFile(), commit.getHash(), "UTF-8");
     }
 
     private String buildRootTree() throws IOException {
