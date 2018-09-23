@@ -36,7 +36,13 @@ class GitCheckout {
     String hash;
 }
 
-@Command(subcommands = {GitLog.class, GitInit.class, GitCommit.class, GitCheckout.class})
+@Command(name = "reset")
+class GitReset {
+    @Parameters(index = "0", paramLabel = "HASH")
+    String hash;
+}
+
+@Command(subcommands = {GitLog.class, GitInit.class, GitCommit.class, GitCheckout.class, GitReset.class})
 class GitCommand {
 }
 
@@ -73,9 +79,9 @@ public class Main {
         if (commandLine.getCommand() instanceof GitLog) {
             GitLog logCommand = commandLine.getCommand();
             List<CommitInfo> log = logCommand.hash != null ? repository.getLog(logCommand.hash) : repository.getLog();
-            for (CommitInfo commitInfo : log) {
-                System.out.println(commitInfo);
-            }
+
+            printCommitLog(log);
+
             return;
         }
 
@@ -89,6 +95,24 @@ public class Main {
             GitCheckout checkout = commandLine.getCommand();
             repository.checkoutTo(checkout.hash);
             return;
+        }
+
+        if (commandLine.getCommand() instanceof GitReset) {
+            GitReset reset = commandLine.getCommand();
+            repository.resetTo(reset.hash);
+            return;
+        }
+    }
+
+    private static void printCommitLog(List<CommitInfo> log) {
+        if (log.isEmpty()) {
+            System.out.println("No commits yet.");
+        } else {
+            for (CommitInfo commitInfo : log) {
+                System.out.printf("commit %s\n", commitInfo.getHash());
+                System.out.println();
+                System.out.printf("%s\n", commitInfo.getMessage());
+            }
         }
     }
 

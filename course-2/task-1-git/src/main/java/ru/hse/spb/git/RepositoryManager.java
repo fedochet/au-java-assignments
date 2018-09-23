@@ -129,6 +129,10 @@ public class RepositoryManager {
         restoreTreeInDir(targetFileTree, repositoryRoot);
     }
 
+    public void resetTo(String hash) {
+        throw new IllegalArgumentException("This command is not implemented yet!");
+    }
+
     private void addFileToIndex(Path newFile) throws IOException {
         String hash = blobRepository.hashBlob(newFile);
         indexManager.set(newFile, hash);
