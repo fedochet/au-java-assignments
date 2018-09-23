@@ -97,18 +97,20 @@ public class RepositoryManager {
     }
 
     public List<CommitInfo> getLog() throws IOException {
-        Optional<String> headCommit = getHeadCommit();
+        return getHeadCommit()
+            .map(ioFunction(this::getLog))
+            .orElse(Collections.emptyList());
+    }
+
+    public List<CommitInfo> getLog(String hash) throws IOException {
+        Optional<Commit> headCommit = commitRepository.getCommit(hash);
         if (!headCommit.isPresent()) {
             return Collections.emptyList();
         }
 
-        return commitsFrom(headCommit.get())
+        return commitsFrom(headCommit.get().getHash())
             .map(c -> new CommitInfo(c.getHash(), c.getMessage()))
             .collect(Collectors.toList());
-    }
-
-    public List<CommitInfo> getLog(String hash) throws IOException {
-        return getLog();
     }
 
     public Optional<String> getHeadCommit() throws IOException {
