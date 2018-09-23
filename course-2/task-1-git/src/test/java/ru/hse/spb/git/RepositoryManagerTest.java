@@ -138,6 +138,30 @@ public class RepositoryManagerTest {
 
     }
 
+    @Test
+    public void after_reset_head_is_set_to_commit_hash() throws IOException {
+        Path newFileOne = createFile("new_file_1", "file1");
+        Path newFileTwo = createFile("new_file_2", "file2");
+
+        String hashOne = repository.commitFile(newFileOne, "commit 1");
+        repository.commitFile(newFileTwo, "commit 2");
+
+        repository.resetTo(hashOne);
+        assertThat(repository.getHeadCommit()).contains(hashOne);
+    }
+
+    @Test
+    public void after_checkout_head_is_set_to_commit_hash() throws IOException {
+        Path newFileOne = createFile("new_file_1", "file1");
+        Path newFileTwo = createFile("new_file_2", "file2");
+
+        String hashOne = repository.commitFile(newFileOne, "commit 1");
+        repository.commitFile(newFileTwo, "commit 2");
+
+        repository.checkoutTo(hashOne);
+        assertThat(repository.getHeadCommit()).contains(hashOne);
+    }
+
     private Path createFile(Path file, String content) throws IOException {
         Path newFile = tempFolder.getRoot().toPath().resolve(file);
         Files.createDirectories(newFile.getParent());

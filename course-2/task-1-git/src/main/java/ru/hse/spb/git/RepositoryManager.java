@@ -127,10 +127,12 @@ public class RepositoryManager {
 
         removeTreeInDir(currentFileTree, repositoryRoot);
         restoreTreeInDir(targetFileTree, repositoryRoot);
+
+        updateHead(getExistingCommit(hash));
     }
 
-    public void resetTo(String hash) {
-        throw new IllegalArgumentException("This command is not implemented yet!");
+    public void resetTo(String hash) throws IOException {
+        checkoutTo(hash);
     }
 
     private void addFileToIndex(Path newFile) throws IOException {
