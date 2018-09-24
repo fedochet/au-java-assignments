@@ -67,6 +67,25 @@ public class RepositoryManagerTest {
     }
 
     @Test
+    public void after_addition_file_can_be_seen_in_added_files() throws IOException {
+        Path newFileOne = createFile("new_file_1", "");
+
+        repository.addFile(newFileOne);
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder().withAddedFile(newFileOne)
+        );
+
+        Path newFileTwo = createFile("new_file_2", "");
+
+        repository.addFile(newFileTwo);
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .withAddedFile(newFileOne)
+                .withAddedFile(newFileTwo)
+        );
+    }
+
+    @Test
     public void new_commit_becomes_head() throws IOException {
         Path newFile = createFile("new_file", "");
 
@@ -77,12 +96,26 @@ public class RepositoryManagerTest {
     }
 
     @Test
+    public void after_commit_file_can_be_seen_in_committed_files() throws IOException {
+        Path newFile = createFile("new_file", "");
+
+        repository.addFile(newFile);
+        repository.commit("first commit");
+
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder().withCommittedFile(newFile)
+        );
+    }
+
+    @Test
     public void new_commit_can_be_seen_in_log() throws IOException {
         Path newFileOne = createFile("new_file_1", "file 1");
         Path newFileTwo = createFile("new_file_2", "file 2");
 
-        String commitOne = repository.commitFile(newFileOne, "first commit");
-        String commitTwo = repository.commitFile(newFileTwo, "second commit");
+        repository.addFile(newFileOne);
+        String commitOne = repository.commit("first commit");
+        repository.addFile(newFileTwo);
+        String commitTwo = repository.commit("second commit");
 
         assertThat(repository.getLog()).containsExactly(
             new CommitInfo(commitTwo, "second commit"),

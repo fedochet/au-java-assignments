@@ -1,7 +1,5 @@
 package ru.hse.spb.git.index;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
@@ -10,30 +8,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static ru.hse.spb.git.CollectionUtils.ioPredicate;
-import static ru.hse.spb.git.CollectionUtils.toStream;
-
-@Data
-class IndexRecord {
-    private final String hash;
-    private final List<String> pathParts;
-
-    Path getPath() {
-        return Paths.get("", pathParts.toArray(new String[0]));
-    }
-
-    static IndexRecord fromPath(String hash, Path path) {
-        return new IndexRecord(
-            hash,
-            toStream(path.iterator()).map(Path::toString).collect(Collectors.toList())
-        );
-    }
-}
 
 public class IndexManager {
     private static final Charset ENCODING = StandardCharsets.UTF_8;

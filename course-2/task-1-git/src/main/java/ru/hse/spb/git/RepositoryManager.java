@@ -12,6 +12,7 @@ import ru.hse.spb.git.filetree.FileRef;
 import ru.hse.spb.git.filetree.FileTree;
 import ru.hse.spb.git.filetree.FileTreeRepository;
 import ru.hse.spb.git.index.IndexManager;
+import ru.hse.spb.git.index.IndexRecord;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,13 +29,16 @@ import static ru.hse.spb.git.CollectionUtils.ioFunction;
 import static ru.hse.spb.git.CollectionUtils.ioPredicate;
 
 interface Status {
+    @NotNull
     Set<Path> getCommittedFiles();
+    @NotNull
     Set<Path> getAddedFiles();
+    @NotNull
     Set<Path> getRemovedFiles();
+    @NotNull
     Set<Path> getNotTrackedFiles();
 }
 
-@NoArgsConstructor
 @Data
 final class StatusBuilder implements Status {
     private final Set<Path> committedFiles = new HashSet<>();
@@ -235,12 +239,55 @@ public class RepositoryManager {
                 String blobHash = blobRepository.hashBlob(folderFile);
                 if (!blobRepository.exists(blobHash)) {
                     statusBuilder.withNotTrackedFile(folderFile);
+                } else {
+                    Optional<String> indexVersion = indexManager.get(folderFile).map(IndexRecord::getHash);
+                    Optional<String> commitVersion = getCurrentCommitVersionOfFile(folderFile);
+
+                    if (indexVersion.isPresent() && commitVersion.isPresent()) {
+                        if (indexVersion.equals(commitVersion)) {
+                            statusBuilder.withCommittedFile(folderFile);
+                        }
+                    } else if (indexVersion.isPresent()) {
+                        statusBuilder.withAddedFile(folderFile);
+                    } else if (!commitVersion.isPresent()) {
+                        statusBuilder.withNotTrackedFile(folderFile);
+                    } else {
+                        throw new IllegalArgumentException("File " + folderFile + " is committed, but not in index!");
+                    }
                 }
             }
         }
 
     }
 
+    private Optional<String> getCurrentCommitVersionOfFile(Path folderFile) throws IOException {
+        Path relativePath = repositoryRoot.relativize(folderFile);
+
+        return getHeadCommit().flatMap(ioFunction(hash -> {
+            Commit headCommit = getExistingCommit(hash);
+            FileTree currentTree = getExistingTree(headCommit.getTreeHash());
+            return locateInTree(currentTree, relativePath.iterator());
+        }));
+    }
+
+    private Optional<String> locateInTree(FileTree currentLevel, Iterator<Path> pathPieces) throws IOException {
+        if (!pathPieces.hasNext()) {
+            return Optional.empty();
+        }
+
+        Path current = pathPieces.next();
+        for (FileRef child : currentLevel.getChildren()) {
+            if (child.getName().equals(current.getFileName().toString())) {
+                if (child.getType().equals(FileRef.Type.DIRECTORY)) {
+                    return locateInTree(getExistingTree(child.getHash()), pathPieces);
+                } else if (!pathPieces.hasNext()) {
+                    return Optional.of(child.getHash());
+                }
+            }
+        }
+
+        return Optional.empty();
+    }
 
     private boolean onTipOfTheMaster() throws IOException {
         return getHeadCommit().equals(getMasterHeadCommit());
