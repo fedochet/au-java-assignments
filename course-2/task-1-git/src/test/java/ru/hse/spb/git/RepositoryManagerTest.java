@@ -120,6 +120,38 @@ public class RepositoryManagerTest {
     }
 
     @Test
+    public void files_with_same_content_can_be_comitted_in_different_commits() throws IOException {
+        Path newFileOne = createFile("new_file_1", "123");
+        Path newFileTwo = createFile("new_file_2", "123");
+
+        String hashOne = repository.commitFile(newFileOne, "first commit");
+        String hashTwo = repository.commitFile(newFileTwo, "second commit");
+
+        assertThat(hashOne).isNotEqualTo(hashTwo);
+        assertThat(repository.getMasterHeadCommit()).contains(hashTwo);
+        assertThat(repository.getHeadCommit()).contains(hashTwo);
+    }
+
+    @Test
+    public void files_with_same_content_can_be_checkouted() throws IOException {
+        Path newFileOne = createFile("new_file_1", "123");
+        Path newFileTwo = createFile("new_file_2", "123");
+
+        String hashOne = repository.commitFile(newFileOne, "first commit");
+        String hashTwo = repository.commitFile(newFileTwo, "second commit");
+
+        repository.checkoutToCommit(hashOne);
+
+        assertThat(newFileOne).hasContent("123");
+        assertThat(newFileTwo).doesNotExist();
+
+        repository.checkoutToCommit(hashTwo);
+
+        assertThat(newFileOne).hasContent("123");
+        assertThat(newFileTwo).hasContent("123");
+    }
+
+    @Test
     public void files_in_two_directories_can_be_committed() throws IOException {
         Path newFileOne = createFile(Paths.get("dir1", "new_file_1"), "file1");
         Path newFileTwo = createFile(Paths.get("dir2", "new_file_2"), "file2");

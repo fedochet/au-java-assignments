@@ -93,7 +93,14 @@ public class Main {
 
         if (commandLine.getCommand() instanceof GitCheckout) {
             GitCheckout checkout = commandLine.getCommand();
-            repository.checkoutToCommit(checkout.hash);
+            if (checkout.hash.equals("master")) {
+                String masterHead = repository.getMasterHeadCommit().orElseThrow(() ->
+                    new IllegalArgumentException("Cannot checkout to master, because there are no commits in it.")
+                );
+                repository.checkoutToCommit(masterHead);
+            } else {
+                repository.checkoutToCommit(checkout.hash);
+            }
             return;
         }
 

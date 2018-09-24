@@ -92,13 +92,12 @@ public class RepositoryManager {
 
     public String commitFile(Path newFile, String commitMessage) throws IOException {
         String hash = blobRepository.hashBlob(newFile);
-        addFileToIndex(newFile);
-        if (blobRepository.exists(hash)) {
-            return hash;
+
+        if (!blobRepository.exists(hash)) {
+            blobRepository.createBlob(newFile);
         }
 
-        blobRepository.createBlob(newFile);
-        indexManager.set(newFile, hash);
+        addFileToIndex(newFile);
         String treeHash = buildRootTree();
         Commit commit = commitRepository.createCommit(treeHash, commitMessage, getHeadCommit().orElse(null));
 
@@ -109,10 +108,6 @@ public class RepositoryManager {
         }
 
         return commit.getHash();
-    }
-
-    private boolean onTipOfTheMaster() throws IOException {
-        return getHeadCommit().equals(getMasterHeadCommit());
     }
 
     public List<CommitInfo> getLog() throws IOException {
@@ -164,6 +159,10 @@ public class RepositoryManager {
     public void resetTo(String hash) throws IOException {
         checkoutToCommit(hash);
         updateMasterHead(getExistingCommit(hash));
+    }
+
+    private boolean onTipOfTheMaster() throws IOException {
+        return getHeadCommit().equals(getMasterHeadCommit());
     }
 
     private void addFileToIndex(Path newFile) throws IOException {
