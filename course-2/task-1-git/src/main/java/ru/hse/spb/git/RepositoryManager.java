@@ -90,6 +90,7 @@ public class RepositoryManager {
         return Optional.empty();
     }
 
+    @Deprecated
     public String commitFile(Path newFile, String commitMessage) throws IOException {
         String hash = blobRepository.hashBlob(newFile);
 
@@ -108,6 +109,16 @@ public class RepositoryManager {
         }
 
         return commit.getHash();
+    }
+
+    @NotNull
+    public String commit(@NotNull String message) {
+        throw new IllegalArgumentException("This method is not implemented yet!");
+    }
+
+    @NotNull
+    public String addFile(@NotNull Path file) {
+        throw new IllegalArgumentException("This method is not implemented yet!");
     }
 
     public List<CommitInfo> getLog() throws IOException {
@@ -318,5 +329,4 @@ public class RepositoryManager {
             }
         }
     }
-
 }

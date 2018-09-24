@@ -12,24 +12,39 @@ import java.util.Optional;
 import static picocli.CommandLine.Command;
 import static picocli.CommandLine.Parameters;
 
+@Command(name = "init")
+class GitInit {
+}
+
 @Command(name = "log")
 class GitLog {
     @Parameters(index = "0", arity = "0..1", description = "from commit")
     String hash;
 }
 
-@Command(name = "init")
-class GitInit {
+@Command(name = "status")
+class GitStatus {
+}
+
+@Command(name = "add")
+class GitAdd {
+    @Parameters(index = "0", paramLabel = "FILE")
+    Path file;
+}
+
+@Command(name = "rm")
+class GitRm {
+    @Parameters(index = "0", paramLabel = "FILE")
+    Path file;
 }
 
 @Command(name = "commit")
 class GitCommit {
     @Parameters(index = "0", paramLabel = "MESSAGE")
     String message;
-    @Parameters(index = "1", paramLabel = "FILE")
-    Path file;
 }
 
+//TODO add option for `-- file` syntax
 @Command(name = "checkout")
 class GitCheckout {
     @Parameters(index = "0", paramLabel = "HASH")
@@ -42,7 +57,16 @@ class GitReset {
     String hash;
 }
 
-@Command(subcommands = {GitLog.class, GitInit.class, GitCommit.class, GitCheckout.class, GitReset.class})
+@Command(subcommands = {
+    GitLog.class,
+    GitInit.class,
+    GitCommit.class,
+    GitCheckout.class,
+    GitReset.class,
+    GitAdd.class,
+    GitRm.class,
+    GitStatus.class,
+})
 class GitCommand {
 }
 
@@ -87,7 +111,13 @@ public class Main {
 
         if (commandLine.getCommand() instanceof GitCommit) {
             GitCommit commit = commandLine.getCommand();
-            repository.commitFile(commit.file.toAbsolutePath(), commit.message);
+            repository.commit(commit.message);
+            return;
+        }
+
+        if (commandLine.getCommand() instanceof GitAdd) {
+            GitAdd gitAdd = commandLine.getCommand();
+            repository.addFile(gitAdd.file);
             return;
         }
 
