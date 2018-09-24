@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -21,12 +20,6 @@ public class RepositoryManagerTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
     private RepositoryManager repository;
-
-    private static final Status EMPTY_STATUS = new Status(
-        Collections.emptyList(),
-        Collections.emptyList(),
-        Collections.emptyList()
-    );
 
     @Before
     public void initRepository() throws IOException {
@@ -44,19 +37,33 @@ public class RepositoryManagerTest {
     }
 
     @Test
-    public void status_of_empty_repository_is_empty() {
-        assertThat(repository.getStatus())
-            .isEqualTo(EMPTY_STATUS);
+    public void status_of_empty_repository_is_empty() throws IOException {
+        assertThat(repository.getStatus()).isEqualTo(new StatusBuilder());
     }
 
     @Test
     public void manager_can_use_already_initialized_dir() throws IOException {
         Path newFile = createFile("new_file", "");
-        repository.commitFile(newFile, "first commit");
+        repository.addFile(newFile);
+        repository.commit("first commit");
 
         RepositoryManager alternativeRepository = RepositoryManager.open(tempFolder.getRoot().toPath()).get();
 
         assertThat(alternativeRepository.getHeadCommit()).isEqualTo(repository.getHeadCommit());
+    }
+
+    @Test
+    public void not_added_file_is_in_not_tracked_files() throws IOException {
+        Path newFileOne = createFile("new_file_1", "file1");
+        Path newFileTwo = createFile(Paths.get("dir1", "new_file_2"), "file2");
+        Path newFileThree = createFile(Paths.get("dir2", "dir3", "new_file_3"), "file3");
+
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .withNotTrackedFile(newFileOne)
+                .withNotTrackedFile(newFileTwo)
+                .withNotTrackedFile(newFileThree)
+        );
     }
 
     @Test

@@ -1,9 +1,9 @@
 package ru.hse.spb.git;
 
-import lombok.Data;
-import lombok.Getter;
+import lombok.*;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 import ru.hse.spb.git.blob.FileBlobRepository;
 import ru.hse.spb.git.commit.Commit;
 import ru.hse.spb.git.commit.CommitInfo;
@@ -27,11 +27,40 @@ import java.util.stream.Stream;
 import static ru.hse.spb.git.CollectionUtils.ioFunction;
 import static ru.hse.spb.git.CollectionUtils.ioPredicate;
 
+interface Status {
+    Set<Path> getCommittedFiles();
+    Set<Path> getAddedFiles();
+    Set<Path> getRemovedFiles();
+    Set<Path> getNotTrackedFiles();
+}
+
+@NoArgsConstructor
 @Data
-final class Status {
-    private final List<Path> addedFiles;
-    private final List<Path> removedFiles;
-    private final List<Path> notTrackedFiles;
+final class StatusBuilder implements Status {
+    private final Set<Path> committedFiles = new HashSet<>();
+    private final Set<Path> addedFiles = new HashSet<>();
+    private final Set<Path> removedFiles = new HashSet<>();
+    private final Set<Path> notTrackedFiles = new HashSet<>();
+
+    public StatusBuilder withCommittedFile(Path path) {
+        committedFiles.add(path);
+        return this;
+    }
+
+    public StatusBuilder withAddedFile(Path path) {
+        addedFiles.add(path);
+        return this;
+    }
+
+    public StatusBuilder withRemovedFile(Path path) {
+        removedFiles.add(path);
+        return this;
+    }
+
+    public StatusBuilder withNotTrackedFile(Path path) {
+        notTrackedFiles.add(path);
+        return this;
+    }
 }
 
 
@@ -184,13 +213,34 @@ public class RepositoryManager {
     }
 
     @NotNull
-    public Status getStatus() {
-        return new Status(
-            Collections.emptyList(),
-            Collections.emptyList(),
-            Collections.emptyList()
-        );
+    public Status getStatus() throws IOException {
+        StatusBuilder statusBuilder = new StatusBuilder();
+        fillStatusInDir(statusBuilder, repositoryRoot);
+
+        return statusBuilder;
     }
+
+    private void fillStatusInDir(StatusBuilder statusBuilder, Path folder) throws IOException {
+        final List<Path> folderFiles;
+        try (Stream<Path> list = Files.list(folder)) {
+            folderFiles = list
+                .filter(ioPredicate(f -> !Files.isSameFile(f, metadataDir)))
+                .collect(Collectors.toList());
+        }
+
+        for (Path folderFile : folderFiles) {
+            if (Files.isDirectory(folderFile)) {
+                fillStatusInDir(statusBuilder, folderFile);
+            } else {
+                String blobHash = blobRepository.hashBlob(folderFile);
+                if (!blobRepository.exists(blobHash)) {
+                    statusBuilder.withNotTrackedFile(folderFile);
+                }
+            }
+        }
+
+    }
+
 
     private boolean onTipOfTheMaster() throws IOException {
         return getHeadCommit().equals(getMasterHeadCommit());
