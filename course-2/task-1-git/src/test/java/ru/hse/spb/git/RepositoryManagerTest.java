@@ -220,6 +220,43 @@ public class RepositoryManagerTest {
         assertThat(repository.getMasterHeadCommit()).contains(hashTwo);
     }
 
+    // This test somehow verifies that index is cleared correctly on checkouts
+    @Test
+    public void complex_workflow_test() throws IOException {
+        Path newFileOne = createFile("new_file_1", "file1");
+        Path newFileTwo = createFile("new_file_2", "file2");
+
+        String hashOne = repository.commitFile(newFileOne, "commit 1");
+        String hashTwo = repository.commitFile(newFileTwo, "commit 2");
+
+        repository.resetTo(hashOne);
+
+        assertThat(newFileOne).hasContent("file1");
+        assertThat(newFileTwo).doesNotExist();
+        assertThat(repository.getHeadCommit()).contains(hashOne);
+        assertThat(repository.getMasterHeadCommit()).contains(hashOne);
+
+        newFileTwo = createFile("new_file_2", "file2");
+        Path newFileThree = createFile("new_file_3", "file3");
+
+        String hashThree = repository.commitFile(newFileOne, "commit 3");
+
+        assertThat(newFileOne).hasContent("file1");
+        assertThat(newFileThree).hasContent("file3");
+        assertThat(repository.getHeadCommit()).contains(hashThree);
+        assertThat(repository.getMasterHeadCommit()).contains(hashThree);
+
+        Files.delete(newFileTwo);
+        repository.checkoutToCommit(hashOne);
+        repository.checkoutToCommit(hashThree);
+
+        assertThat(newFileOne).hasContent("file1");
+        assertThat(newFileTwo).doesNotExist();
+        assertThat(newFileThree).hasContent("file3");
+        assertThat(repository.getHeadCommit()).contains(hashThree);
+        assertThat(repository.getMasterHeadCommit()).contains(hashThree);
+    }
+
     private Path createFile(Path file, String content) throws IOException {
         Path newFile = tempFolder.getRoot().toPath().resolve(file);
         Files.createDirectories(newFile.getParent());

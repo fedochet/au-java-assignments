@@ -69,22 +69,22 @@ public class IndexManager {
     public Optional<IndexRecord> get(Path path) throws IOException {
         try (Stream<IndexRecord> indexEntries = getIndexEntries()) {
             return indexEntries
-                .filter(ioPredicate(record -> Files.isSameFile(repositoryRoot.resolve(record.getPath()), path)))
+                .filter(ioPredicate(record -> repositoryRoot.resolve(record.getPath()).equals(path)))
                 .findFirst();
         }
     }
 
     public void set(Path path, String hash) throws IOException {
-        final List<IndexRecord> collect;
-        try (Stream<IndexRecord> indexEntries = getIndexEntries()) {
-            collect = indexEntries
-                .filter(ioPredicate(record -> !Files.isSameFile(repositoryRoot.resolve(record.getPath()), path)))
-                .collect(Collectors.toCollection(ArrayList::new));
-        }
+        List<IndexRecord> indexRecords = new ArrayList<>(getAllRecords());
+        indexRecords.removeIf(record -> repositoryRoot.resolve(record.getPath()).equals(path));
+        indexRecords.add(IndexRecord.fromPath(hash, repositoryRoot.relativize(path)));
+        updateIndex(indexRecords);
+    }
 
-        collect.add(IndexRecord.fromPath(hash, repositoryRoot.relativize(path)));
-
-        updateIndex(collect);
+    public void delete(Path path) throws IOException {
+        List<IndexRecord> indexRecords = new ArrayList<>(getAllRecords());
+        indexRecords.removeIf(record -> repositoryRoot.resolve(record.getPath()).equals(path));
+        updateIndex(indexRecords);
     }
 
     private Stream<IndexRecord> getIndexEntries() throws IOException {

@@ -159,6 +159,7 @@ public class RepositoryManager {
     public void resetTo(String hash) throws IOException {
         checkoutToCommit(hash);
         updateMasterHead(getExistingCommit(hash));
+        pointHeadToMaster();
     }
 
     private boolean onTipOfTheMaster() throws IOException {
@@ -181,6 +182,9 @@ public class RepositoryManager {
         FileUtils.write(head.toFile(), commit.getHash(), "UTF-8");
     }
 
+    private void pointHeadToMaster() throws IOException {
+        FileUtils.write(head.toFile(), "master", "UTF-8");
+    }
 
     private void updateMasterHead(Commit commit) throws IOException {
         FileUtils.write(masterHead.toFile(), commit.getHash(), "UTF-8");
@@ -241,7 +245,9 @@ public class RepositoryManager {
                 removeTreeInDir(childFileTree, targetDir);
             } else {
                 // TODO 17.09.2018: reject checkout if file is removed
-                Files.deleteIfExists(dir.resolve(child.getName()));
+                Path targetFile = dir.resolve(child.getName());
+                Files.deleteIfExists(targetFile);
+                indexManager.delete(targetFile);
             }
         }
 
@@ -264,6 +270,7 @@ public class RepositoryManager {
                 try (InputStream blobInputStream = getExistingBlob(child.getHash())) {
                     Path targetFile = dir.resolve(child.getName());
                     Files.copy(blobInputStream, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                    indexManager.set(targetFile, child.getHash());
                 }
             }
         }
