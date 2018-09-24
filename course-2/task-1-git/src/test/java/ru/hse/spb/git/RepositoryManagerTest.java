@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -20,6 +21,12 @@ public class RepositoryManagerTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
     private RepositoryManager repository;
+
+    private static final Status EMPTY_STATUS = new Status(
+        Collections.emptyList(),
+        Collections.emptyList(),
+        Collections.emptyList()
+    );
 
     @Before
     public void initRepository() throws IOException {
@@ -37,6 +44,12 @@ public class RepositoryManagerTest {
     }
 
     @Test
+    public void status_of_empty_repository_is_empty() {
+        assertThat(repository.getStatus())
+            .isEqualTo(EMPTY_STATUS);
+    }
+
+    @Test
     public void manager_can_use_already_initialized_dir() throws IOException {
         Path newFile = createFile("new_file", "");
         repository.commitFile(newFile, "first commit");
@@ -50,7 +63,8 @@ public class RepositoryManagerTest {
     public void new_commit_becomes_head() throws IOException {
         Path newFile = createFile("new_file", "");
 
-        String hash = repository.commitFile(newFile, "first commit");
+        repository.addFile(newFile);
+        String hash = repository.commit("first commit");
 
         assertThat(repository.getHeadCommit()).contains(hash);
     }

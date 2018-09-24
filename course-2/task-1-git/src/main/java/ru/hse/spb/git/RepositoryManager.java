@@ -1,5 +1,6 @@
 package ru.hse.spb.git;
 
+import lombok.Data;
 import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +26,14 @@ import java.util.stream.Stream;
 
 import static ru.hse.spb.git.CollectionUtils.ioFunction;
 import static ru.hse.spb.git.CollectionUtils.ioPredicate;
+
+@Data
+final class Status {
+    private final List<Path> addedFiles;
+    private final List<Path> removedFiles;
+    private final List<Path> notTrackedFiles;
+}
+
 
 public class RepositoryManager {
     private static final Charset ENCODING = StandardCharsets.UTF_8;
@@ -92,13 +101,12 @@ public class RepositoryManager {
 
     @Deprecated
     public String commitFile(Path newFile, String commitMessage) throws IOException {
-        String hash = blobRepository.hashBlob(newFile);
+        addFile(newFile);
+        return commit(commitMessage);
+    }
 
-        if (!blobRepository.exists(hash)) {
-            blobRepository.createBlob(newFile);
-        }
-
-        addFileToIndex(newFile);
+    @NotNull
+    public String commit(@NotNull String commitMessage) throws IOException {
         String treeHash = buildRootTree();
         Commit commit = commitRepository.createCommit(treeHash, commitMessage, getHeadCommit().orElse(null));
 
@@ -112,13 +120,15 @@ public class RepositoryManager {
     }
 
     @NotNull
-    public String commit(@NotNull String message) {
-        throw new IllegalArgumentException("This method is not implemented yet!");
-    }
+    public String addFile(@NotNull Path newFile) throws IOException {
+        String hash = blobRepository.hashBlob(newFile);
 
-    @NotNull
-    public String addFile(@NotNull Path file) {
-        throw new IllegalArgumentException("This method is not implemented yet!");
+        if (!blobRepository.exists(hash)) {
+            blobRepository.createBlob(newFile);
+        }
+
+        addFileToIndex(newFile);
+        return hash;
     }
 
     public List<CommitInfo> getLog() throws IOException {
@@ -171,6 +181,15 @@ public class RepositoryManager {
         checkoutToCommit(hash);
         updateMasterHead(getExistingCommit(hash));
         pointHeadToMaster();
+    }
+
+    @NotNull
+    public Status getStatus() {
+        return new Status(
+            Collections.emptyList(),
+            Collections.emptyList(),
+            Collections.emptyList()
+        );
     }
 
     private boolean onTipOfTheMaster() throws IOException {
