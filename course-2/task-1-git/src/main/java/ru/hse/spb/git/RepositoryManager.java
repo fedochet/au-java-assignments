@@ -1,9 +1,9 @@
 package ru.hse.spb.git;
 
-import lombok.*;
+import lombok.Data;
+import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.TestOnly;
 import ru.hse.spb.git.blob.FileBlobRepository;
 import ru.hse.spb.git.commit.Commit;
 import ru.hse.spb.git.commit.CommitInfo;
@@ -32,7 +32,9 @@ interface Status {
     @NotNull
     Set<Path> getCommittedFiles();
     @NotNull
-    Set<Path> getAddedFiles();
+    Set<Path> getStagedFiles();
+    @NotNull
+    Set<Path> getNotStagedFiles();
     @NotNull
     Set<Path> getRemovedFiles();
     @NotNull
@@ -42,7 +44,8 @@ interface Status {
 @Data
 final class StatusBuilder implements Status {
     private final Set<Path> committedFiles = new HashSet<>();
-    private final Set<Path> addedFiles = new HashSet<>();
+    private final Set<Path> stagedFiles = new HashSet<>();
+    private final Set<Path> notStagedFiles = new HashSet<>();
     private final Set<Path> removedFiles = new HashSet<>();
     private final Set<Path> notTrackedFiles = new HashSet<>();
 
@@ -51,8 +54,13 @@ final class StatusBuilder implements Status {
         return this;
     }
 
-    public StatusBuilder withAddedFile(Path path) {
-        addedFiles.add(path);
+    public StatusBuilder withStagedFile(Path path) {
+        stagedFiles.add(path);
+        return this;
+    }
+
+    public StatusBuilder withNotStagedFile(Path path) {
+        notStagedFiles.add(path);
         return this;
     }
 
@@ -220,8 +228,17 @@ public class RepositoryManager {
     public Status getStatus() throws IOException {
         StatusBuilder statusBuilder = new StatusBuilder();
         fillStatusInDir(statusBuilder, repositoryRoot);
+        catchRemovedFromIndex(statusBuilder);
 
         return statusBuilder;
+    }
+
+    private void catchRemovedFromIndex(StatusBuilder statusBuilder) throws IOException {
+        for (IndexRecord record : indexManager.getAllRecords()) {
+            if (!Files.exists(repositoryRoot.resolve(record.getPath()))) {
+                statusBuilder.withRemovedFile(repositoryRoot.resolve(record.getPath()));
+            }
+        }
     }
 
     private void fillStatusInDir(StatusBuilder statusBuilder, Path folder) throws IOException {
@@ -238,7 +255,12 @@ public class RepositoryManager {
             } else {
                 String blobHash = blobRepository.hashBlob(folderFile);
                 if (!blobRepository.exists(blobHash)) {
-                    statusBuilder.withNotTrackedFile(folderFile);
+                    Optional<String> currentCommitVersionOfFile = getCurrentCommitVersionOfFile(folderFile);
+                    if (currentCommitVersionOfFile.isPresent()) {
+                        statusBuilder.withNotStagedFile(folderFile);
+                    } else {
+                        statusBuilder.withNotTrackedFile(folderFile);
+                    }
                 } else {
                     Optional<String> indexVersion = indexManager.get(folderFile).map(IndexRecord::getHash);
                     Optional<String> commitVersion = getCurrentCommitVersionOfFile(folderFile);
@@ -246,9 +268,11 @@ public class RepositoryManager {
                     if (indexVersion.isPresent() && commitVersion.isPresent()) {
                         if (indexVersion.equals(commitVersion)) {
                             statusBuilder.withCommittedFile(folderFile);
+                        } else {
+                            statusBuilder.withStagedFile(folderFile);
                         }
                     } else if (indexVersion.isPresent()) {
-                        statusBuilder.withAddedFile(folderFile);
+                        statusBuilder.withStagedFile(folderFile);
                     } else if (!commitVersion.isPresent()) {
                         statusBuilder.withNotTrackedFile(folderFile);
                     } else {

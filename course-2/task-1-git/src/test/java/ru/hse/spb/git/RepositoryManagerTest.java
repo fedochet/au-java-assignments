@@ -37,11 +37,6 @@ public class RepositoryManagerTest {
     }
 
     @Test
-    public void status_of_empty_repository_is_empty() throws IOException {
-        assertThat(repository.getStatus()).isEqualTo(new StatusBuilder());
-    }
-
-    @Test
     public void manager_can_use_already_initialized_dir() throws IOException {
         Path newFile = createFile("new_file", "");
         repository.addFile(newFile);
@@ -53,39 +48,6 @@ public class RepositoryManagerTest {
     }
 
     @Test
-    public void not_added_file_is_in_not_tracked_files() throws IOException {
-        Path newFileOne = createFile("new_file_1", "file1");
-        Path newFileTwo = createFile(Paths.get("dir1", "new_file_2"), "file2");
-        Path newFileThree = createFile(Paths.get("dir2", "dir3", "new_file_3"), "file3");
-
-        assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
-                .withNotTrackedFile(newFileOne)
-                .withNotTrackedFile(newFileTwo)
-                .withNotTrackedFile(newFileThree)
-        );
-    }
-
-    @Test
-    public void after_addition_file_can_be_seen_in_added_files() throws IOException {
-        Path newFileOne = createFile("new_file_1", "");
-
-        repository.addFile(newFileOne);
-        assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withAddedFile(newFileOne)
-        );
-
-        Path newFileTwo = createFile("new_file_2", "");
-
-        repository.addFile(newFileTwo);
-        assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
-                .withAddedFile(newFileOne)
-                .withAddedFile(newFileTwo)
-        );
-    }
-
-    @Test
     public void new_commit_becomes_head() throws IOException {
         Path newFile = createFile("new_file", "");
 
@@ -93,18 +55,6 @@ public class RepositoryManagerTest {
         String hash = repository.commit("first commit");
 
         assertThat(repository.getHeadCommit()).contains(hash);
-    }
-
-    @Test
-    public void after_commit_file_can_be_seen_in_committed_files() throws IOException {
-        Path newFile = createFile("new_file", "");
-
-        repository.addFile(newFile);
-        repository.commit("first commit");
-
-        assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withCommittedFile(newFile)
-        );
     }
 
     @Test

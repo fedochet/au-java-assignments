@@ -14,7 +14,7 @@ public class IndexRecord {
     private final String hash;
     private final List<String> pathParts;
 
-    Path getPath() {
+    public Path getPath() {
         return Paths.get("", pathParts.toArray(new String[0]));
     }
 
