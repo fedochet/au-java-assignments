@@ -7,6 +7,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import ru.hse.spb.git.index.FileReference;
+import ru.hse.spb.git.status.StatusBuilder;
 
 import java.io.IOException;
 import java.nio.file.Files;

@@ -1,6 +1,5 @@
 package ru.hse.spb.git;
 
-import lombok.Data;
 import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +13,8 @@ import ru.hse.spb.git.filetree.FileTreeRepository;
 import ru.hse.spb.git.filetree.HashRef;
 import ru.hse.spb.git.index.FileReference;
 import ru.hse.spb.git.index.IndexManager;
+import ru.hse.spb.git.status.Status;
+import ru.hse.spb.git.status.StatusBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,85 +28,6 @@ import java.util.stream.Stream;
 
 import static ru.hse.spb.git.CollectionUtils.ioFunction;
 import static ru.hse.spb.git.CollectionUtils.ioPredicate;
-
-interface Status {
-    /**
-     * New files.
-     */
-    @NotNull
-    Set<Path> getNotTrackedFiles();
-
-    /**
-     * Modified but not yet staged files.
-     */
-    @NotNull
-    Set<Path> getNotStagedFiles();
-
-    /**
-     * Files staged for the next commit.
-     */
-    @NotNull
-    Set<Path> getStagedFiles();
-
-    /**
-     * Files contained in current commit.
-     */
-    @NotNull
-    Set<Path> getCommittedFiles();
-
-    /**
-     * Files staged for deletion.
-     */
-    @NotNull
-    Set<Path> getDeletedFiles();
-
-    /**
-     * Committed but missing files.
-     */
-    @NotNull
-    Set<Path> getMissingFiles();
-}
-
-@Data
-final class StatusBuilder implements Status {
-    private final Set<Path> notTrackedFiles = new HashSet<>();
-    private final Set<Path> committedFiles = new HashSet<>();
-    private final Set<Path> stagedFiles = new HashSet<>();
-    private final Set<Path> notStagedFiles = new HashSet<>();
-    private final Set<Path> deletedFiles = new HashSet<>();
-    private final Set<Path> missingFiles = new HashSet<>();
-
-    public StatusBuilder withCommittedFiles(Path... paths) {
-        Collections.addAll(committedFiles, paths);
-        return this;
-    }
-
-    public StatusBuilder withStagedFiles(Path... paths) {
-        Collections.addAll(stagedFiles, paths);
-        return this;
-    }
-
-    public StatusBuilder withNotStagedFiles(Path... paths) {
-        Collections.addAll(notStagedFiles, paths);
-        return this;
-    }
-
-    public StatusBuilder withDeletedFiles(Path... paths) {
-        Collections.addAll(deletedFiles, paths);
-        return this;
-    }
-
-    public StatusBuilder withNotTrackedFiles(Path... paths) {
-        Collections.addAll(notTrackedFiles, paths);
-        return this;
-    }
-
-    public StatusBuilder withMissingFiles(Path... paths) {
-        Collections.addAll(missingFiles, paths);
-        return this;
-    }
-}
-
 
 public class RepositoryManager {
     private static final Charset ENCODING = StandardCharsets.UTF_8;
