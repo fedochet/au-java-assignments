@@ -248,12 +248,7 @@ public class RepositoryManager {
     }
 
     private void fillStatusInDir(StatusBuilder statusBuilder, Path folder) throws IOException {
-        final List<Path> folderFiles;
-        try (Stream<Path> list = Files.list(folder)) {
-            folderFiles = list
-                .filter(ioPredicate(f -> !Files.isSameFile(f, metadataDir)))
-                .collect(Collectors.toList());
-        }
+        List<Path> folderFiles = getFolderFiles(folder);
 
         for (Path folderFile : folderFiles) {
             if (Files.isDirectory(folderFile)) {
@@ -261,33 +256,39 @@ public class RepositoryManager {
             } else {
                 String blobHash = blobRepository.hashBlob(folderFile);
                 if (!blobRepository.exists(blobHash)) {
-                    Optional<String> currentCommitVersionOfFile = getCurrentCommitVersionOfFile(folderFile);
-                    if (currentCommitVersionOfFile.isPresent()) {
-                        statusBuilder.withNotStagedFiles(folderFile);
-                    } else {
-                        statusBuilder.withNotTrackedFiles(folderFile);
-                    }
+                    addNotBlobbedFile(statusBuilder, folderFile);
                 } else {
-                    Optional<String> indexVersion = indexManager.get(folderFile).map(IndexRecord::getHash);
-                    Optional<String> commitVersion = getCurrentCommitVersionOfFile(folderFile);
-
-                    if (indexVersion.isPresent() && commitVersion.isPresent()) {
-                        if (indexVersion.equals(commitVersion)) {
-                            statusBuilder.withCommittedFiles(folderFile);
-                        } else {
-                            statusBuilder.withStagedFiles(folderFile);
-                        }
-                    } else if (indexVersion.isPresent()) {
-                        statusBuilder.withStagedFiles(folderFile);
-                    } else if (!commitVersion.isPresent()) {
-                        statusBuilder.withNotTrackedFiles(folderFile);
-                    } else {
-                        throw new IllegalArgumentException("File " + folderFile + " is committed, but not in index!");
-                    }
+                    addBlobbedFile(statusBuilder, folderFile);
                 }
             }
         }
 
+    }
+
+    private void addNotBlobbedFile(StatusBuilder statusBuilder, Path folderFile) throws IOException {
+        Optional<String> currentCommitVersionOfFile = getCurrentCommitVersionOfFile(folderFile);
+        if (currentCommitVersionOfFile.isPresent()) {
+            statusBuilder.withNotStagedFiles(folderFile);
+        } else {
+            statusBuilder.withNotTrackedFiles(folderFile);
+        }
+    }
+
+    private void addBlobbedFile(StatusBuilder statusBuilder, Path folderFile) throws IOException {
+        Optional<String> indexVersion = indexManager.get(folderFile).map(IndexRecord::getHash);
+        Optional<String> commitVersion = getCurrentCommitVersionOfFile(folderFile);
+
+        if (indexVersion.isPresent()) {
+            if (indexVersion.equals(commitVersion)) {
+                statusBuilder.withCommittedFiles(folderFile);
+            } else {
+                statusBuilder.withStagedFiles(folderFile);
+            }
+        } else if (!commitVersion.isPresent()) {
+            statusBuilder.withNotTrackedFiles(folderFile);
+        } else {
+            throw new IllegalArgumentException("File " + folderFile + " is committed, but not in index!");
+        }
     }
 
     private Optional<String> getCurrentCommitVersionOfFile(Path folderFile) throws IOException {
@@ -354,13 +355,7 @@ public class RepositoryManager {
     }
 
     private Optional<String> buildTree(Path folder) throws IOException {
-        final List<Path> folderFiles;
-
-        try (Stream<Path> list = Files.list(folder)) {
-            folderFiles = list
-                .filter(ioPredicate(f -> !Files.isSameFile(f, metadataDir)))
-                .collect(Collectors.toList());
-        }
+        List<Path> folderFiles = getFolderFiles(folder);
 
         List<FileRef> refs = new ArrayList<>();
         for (Path folderFile : folderFiles) {
@@ -388,6 +383,14 @@ public class RepositoryManager {
         }
 
         return Optional.of(fileTreeRepository.createTree(refs).getHash());
+    }
+
+    private List<Path> getFolderFiles(Path folder) throws IOException {
+        try (Stream<Path> list = Files.list(folder)) {
+            return list
+                .filter(ioPredicate(f -> !Files.isSameFile(f, metadataDir)))
+                .collect(Collectors.toList());
+        }
     }
 
     private void removeTreeInDir(FileTree fileTree, Path dir) throws IOException {
