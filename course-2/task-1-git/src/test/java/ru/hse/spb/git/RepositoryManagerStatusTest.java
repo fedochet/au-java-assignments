@@ -38,9 +38,9 @@ public class RepositoryManagerStatusTest {
 
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
-                .withNotTrackedFile(newFileOne)
-                .withNotTrackedFile(newFileTwo)
-                .withNotTrackedFile(newFileThree)
+                .withNotTrackedFiles(newFileOne)
+                .withNotTrackedFiles(newFileTwo)
+                .withNotTrackedFiles(newFileThree)
         );
     }
 
@@ -50,7 +50,7 @@ public class RepositoryManagerStatusTest {
 
         repository.addFile(newFileOne);
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withStagedFile(newFileOne)
+            new StatusBuilder().withStagedFiles(newFileOne)
         );
 
         Path newFileTwo = createFile("new_file_2", "");
@@ -58,8 +58,8 @@ public class RepositoryManagerStatusTest {
         repository.addFile(newFileTwo);
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
-                .withStagedFile(newFileOne)
-                .withStagedFile(newFileTwo)
+                .withStagedFiles(newFileOne)
+                .withStagedFiles(newFileTwo)
         );
     }
 
@@ -71,7 +71,7 @@ public class RepositoryManagerStatusTest {
         repository.commit("first commit");
 
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withCommittedFile(newFile)
+            new StatusBuilder().withCommittedFiles(newFile)
         );
     }
 
@@ -84,8 +84,7 @@ public class RepositoryManagerStatusTest {
         FileUtils.write(newFile.toFile(), "content", UTF_8);
 
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
-                .withNotStagedFile(newFile)
+            new StatusBuilder().withNotStagedFiles(newFile)
         );
     }
 
@@ -99,7 +98,7 @@ public class RepositoryManagerStatusTest {
 
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
-                .withRemovedFile(newFile)
+                .withRemovedFiles(newFile)
         );
     }
 

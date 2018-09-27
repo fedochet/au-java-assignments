@@ -18,7 +18,7 @@ public class IndexRecord {
         return Paths.get("", pathParts.toArray(new String[0]));
     }
 
-    static IndexRecord fromPath(String hash, Path path) {
+    static public IndexRecord fromPath(String hash, Path path) {
         return new IndexRecord(
             hash,
             toStream(path.iterator()).map(Path::toString).collect(Collectors.toList())

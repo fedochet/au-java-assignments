@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 import ru.hse.spb.git.blob.FileBlobRepository;
 import ru.hse.spb.git.commit.Commit;
 import ru.hse.spb.git.commit.CommitInfo;
@@ -49,28 +50,28 @@ final class StatusBuilder implements Status {
     private final Set<Path> removedFiles = new HashSet<>();
     private final Set<Path> notTrackedFiles = new HashSet<>();
 
-    public StatusBuilder withCommittedFile(Path path) {
-        committedFiles.add(path);
+    public StatusBuilder withCommittedFiles(Path... path) {
+        committedFiles.addAll(Arrays.asList(path));
         return this;
     }
 
-    public StatusBuilder withStagedFile(Path path) {
-        stagedFiles.add(path);
+    public StatusBuilder withStagedFiles(Path... path) {
+        stagedFiles.addAll(Arrays.asList(path));
         return this;
     }
 
-    public StatusBuilder withNotStagedFile(Path path) {
-        notStagedFiles.add(path);
+    public StatusBuilder withNotStagedFiles(Path... paths) {
+        notStagedFiles.addAll(Arrays.asList(paths));
         return this;
     }
 
-    public StatusBuilder withRemovedFile(Path path) {
-        removedFiles.add(path);
+    public StatusBuilder withRemovedFiles(Path... paths) {
+        removedFiles.addAll(Arrays.asList(paths));
         return this;
     }
 
-    public StatusBuilder withNotTrackedFile(Path path) {
-        notTrackedFiles.add(path);
+    public StatusBuilder withNotTrackedFiles(Path... paths) {
+        notTrackedFiles.addAll(Arrays.asList(paths));
         return this;
     }
 }
@@ -233,10 +234,15 @@ public class RepositoryManager {
         return statusBuilder;
     }
 
+    @TestOnly
+    public Set<IndexRecord> getCurrentIndex() throws IOException {
+        return new HashSet<>(indexManager.getAllRecords());
+    }
+
     private void catchRemovedFromIndex(StatusBuilder statusBuilder) throws IOException {
         for (IndexRecord record : indexManager.getAllRecords()) {
             if (!Files.exists(repositoryRoot.resolve(record.getPath()))) {
-                statusBuilder.withRemovedFile(repositoryRoot.resolve(record.getPath()));
+                statusBuilder.withRemovedFiles(repositoryRoot.resolve(record.getPath()));
             }
         }
     }
@@ -257,9 +263,9 @@ public class RepositoryManager {
                 if (!blobRepository.exists(blobHash)) {
                     Optional<String> currentCommitVersionOfFile = getCurrentCommitVersionOfFile(folderFile);
                     if (currentCommitVersionOfFile.isPresent()) {
-                        statusBuilder.withNotStagedFile(folderFile);
+                        statusBuilder.withNotStagedFiles(folderFile);
                     } else {
-                        statusBuilder.withNotTrackedFile(folderFile);
+                        statusBuilder.withNotTrackedFiles(folderFile);
                     }
                 } else {
                     Optional<String> indexVersion = indexManager.get(folderFile).map(IndexRecord::getHash);
@@ -267,14 +273,14 @@ public class RepositoryManager {
 
                     if (indexVersion.isPresent() && commitVersion.isPresent()) {
                         if (indexVersion.equals(commitVersion)) {
-                            statusBuilder.withCommittedFile(folderFile);
+                            statusBuilder.withCommittedFiles(folderFile);
                         } else {
-                            statusBuilder.withStagedFile(folderFile);
+                            statusBuilder.withStagedFiles(folderFile);
                         }
                     } else if (indexVersion.isPresent()) {
-                        statusBuilder.withStagedFile(folderFile);
+                        statusBuilder.withStagedFiles(folderFile);
                     } else if (!commitVersion.isPresent()) {
-                        statusBuilder.withNotTrackedFile(folderFile);
+                        statusBuilder.withNotTrackedFiles(folderFile);
                     } else {
                         throw new IllegalArgumentException("File " + folderFile + " is committed, but not in index!");
                     }
