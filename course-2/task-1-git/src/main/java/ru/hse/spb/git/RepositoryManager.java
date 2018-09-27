@@ -21,7 +21,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -183,7 +182,7 @@ public class RepositoryManager {
         String treeHash = buildRootTree();
         Commit commit = commitRepository.createCommit(treeHash, commitMessage, getHeadCommit().orElse(null));
 
-        if (onTipOfTheMaster()) {
+        if (onTipOfMaster()) {
             updateMasterHead(commit);
         } else {
             updateHead(commit);
@@ -238,8 +237,8 @@ public class RepositoryManager {
         FileTree currentFileTree = getExistingTree(currentCommit.getTreeHash());
         FileTree targetFileTree = getExistingTree(targetCommit.getTreeHash());
 
-        removeTreeInDir(currentFileTree, repositoryRoot);
-        restoreTreeInDir(targetFileTree, repositoryRoot);
+        removeTreeInRoot(currentFileTree);
+        restoreTreeInRoot(targetFileTree);
 
         updateHead(getExistingCommit(hash));
     }
@@ -274,22 +273,6 @@ public class RepositoryManager {
         return new HashSet<>(indexManager.getAllRecords());
     }
 
-    private List<FileReference> getFilesInTree(FileTree tree, Deque<String> path) throws IOException {
-        List<FileReference> files = new ArrayList<>();
-
-        for (HashRef child : tree.getChildren()) {
-            path.addLast(child.getName());
-            if (child.getType().equals(HashRef.Type.DIRECTORY)) {
-                files.addAll(getFilesInTree(getExistingTree(child.getHash()), path));
-            } else {
-                files.add(new FileReference(child.getHash(), new ArrayList<>(path)));
-            }
-            path.removeLast();
-        }
-
-        return files;
-    }
-
     private void gatherRemovedFiles(StatusBuilder statusBuilder) throws IOException {
         Optional<String> headCommit = getHeadCommit();
         if (!headCommit.isPresent()) {
@@ -298,7 +281,7 @@ public class RepositoryManager {
 
         String hash = headCommit.get();
         FileTree rootTree = getExistingTree(getExistingCommit(hash).getTreeHash());
-        List<FileReference> files = getFilesInTree(rootTree, new ArrayDeque<>());
+        List<FileReference> files = getTreeFilesRecursively(rootTree);
         for (FileReference ref : files) {
             Path fullPath = repositoryRoot.resolve(ref.getPath());
             boolean fileIsRemovedFromDisk = Files.notExists(fullPath);
@@ -363,30 +346,17 @@ public class RepositoryManager {
         return getHeadCommit().flatMap(ioFunction(hash -> {
             Commit headCommit = getExistingCommit(hash);
             FileTree currentTree = getExistingTree(headCommit.getTreeHash());
-            return locateInTree(currentTree, relativePath.iterator());
+            return locateInTree(currentTree, relativePath).map(FileReference::getHash);
         }));
     }
 
-    private Optional<String> locateInTree(FileTree currentLevel, Iterator<Path> pathPieces) throws IOException {
-        if (!pathPieces.hasNext()) {
-            return Optional.empty();
-        }
-
-        Path current = pathPieces.next();
-        for (HashRef child : currentLevel.getChildren()) {
-            if (child.getName().equals(current.getFileName().toString())) {
-                if (child.getType().equals(HashRef.Type.DIRECTORY)) {
-                    return locateInTree(getExistingTree(child.getHash()), pathPieces);
-                } else if (!pathPieces.hasNext()) {
-                    return Optional.of(child.getHash());
-                }
-            }
-        }
-
-        return Optional.empty();
+    private Optional<FileReference> locateInTree(FileTree currentLevel, Path path) throws IOException {
+        return getTreeFilesRecursively(currentLevel).stream()
+            .filter(ref -> ref.getPath().equals(path))
+            .findFirst();
     }
 
-    private boolean onTipOfTheMaster() throws IOException {
+    private boolean onTipOfMaster() throws IOException {
         return getHeadCommit().equals(getMasterHeadCommit());
     }
 
@@ -459,47 +429,53 @@ public class RepositoryManager {
         }
     }
 
-    private void removeTreeInDir(FileTree fileTree, Path dir) throws IOException {
+    private void removeTreeInRoot(FileTree fileTree) throws IOException {
         checkFileTreeIsValid(fileTree);
 
-        for (HashRef child : fileTree.getChildren()) {
-            if (child.getType().equals(HashRef.Type.DIRECTORY)) {
-                Path targetDir = dir.resolve(child.getName());
-                Files.createDirectories(targetDir);
-                FileTree childFileTree = getExistingTree(child.getHash());
+        for (FileReference fileReference : getTreeFilesRecursively(fileTree)) {
+            Path targetFile = repositoryRoot.resolve(fileReference.getPath());
+            Path parent = targetFile.getParent();
+            Files.deleteIfExists(targetFile);
+            indexManager.delete(targetFile);
 
-                removeTreeInDir(childFileTree, targetDir);
-            } else {
-                // TODO 17.09.2018: reject checkout if file is removed
-                Path targetFile = dir.resolve(child.getName());
-                Files.deleteIfExists(targetFile);
-                indexManager.delete(targetFile);
+            if (Files.exists(parent) && Files.list(parent).count() == 0) {
+                Files.delete(parent);
             }
-        }
-
-        if (Files.list(dir).count() == 0) {
-            Files.delete(dir);
         }
     }
 
-    private void restoreTreeInDir(FileTree fileTree, Path dir) throws IOException {
+    private void restoreTreeInRoot(FileTree fileTree) throws IOException {
         checkFileTreeIsValid(fileTree);
 
-        for (HashRef child : fileTree.getChildren()) {
-            if (child.getType().equals(HashRef.Type.DIRECTORY)) {
-                Path targetDir = dir.resolve(child.getName());
-                Files.createDirectories(targetDir);
-                FileTree childFileTree = getExistingTree(child.getHash());
-
-                restoreTreeInDir(childFileTree, targetDir);
-            } else {
-                try (InputStream blobInputStream = getExistingBlob(child.getHash())) {
-                    Path targetFile = dir.resolve(child.getName());
-                    Files.copy(blobInputStream, targetFile, StandardCopyOption.REPLACE_EXISTING);
-                    indexManager.set(targetFile, child.getHash());
-                }
+        for (FileReference fileReference : getTreeFilesRecursively(fileTree)) {
+            Path targetFile = repositoryRoot.resolve(fileReference.getPath());
+            try (InputStream blobInputStream = getExistingBlob(fileReference.getHash())) {
+                FileUtils.copyToFile(blobInputStream, targetFile.toFile());
             }
+            indexManager.set(targetFile, fileReference.getHash());
         }
+    }
+
+    @NotNull
+    private List<FileReference> getTreeFilesRecursively(FileTree tree) throws IOException {
+        return getTreeFilesRecursively(tree, new ArrayDeque<>());
+    }
+
+    @NotNull
+    private List<FileReference> getTreeFilesRecursively(FileTree tree, Deque<String> path) throws IOException {
+        List<FileReference> files = new ArrayList<>();
+
+        for (HashRef child : tree.getChildren()) {
+            path.addLast(child.getName());
+            if (child.getType().equals(HashRef.Type.DIRECTORY)) {
+                files.addAll(getTreeFilesRecursively(getExistingTree(child.getHash()), path));
+            } else {
+                files.add(new FileReference(child.getHash(), new ArrayList<>(path)));
+            }
+            path.removeLast();
+        }
+
+        return files;
     }
 
     @NotNull
