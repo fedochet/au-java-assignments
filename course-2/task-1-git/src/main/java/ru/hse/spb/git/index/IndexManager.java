@@ -25,7 +25,7 @@ public class IndexManager {
         this.indexFile = indexFile;
     }
 
-    public void updateIndex(List<IndexRecord> records) throws IOException {
+    public void updateIndex(List<FileReference> records) throws IOException {
         List<String> serialized = records.stream()
             .map(record -> String.format(
                 "%s %s",
@@ -39,14 +39,14 @@ public class IndexManager {
         }
     }
 
-    public List<IndexRecord> getAllRecords() throws IOException {
-        try (Stream<IndexRecord> indexEntries = getIndexEntries()) {
-            return indexEntries.sorted(Comparator.comparing(IndexRecord::getPath)).collect(Collectors.toList());
+    public List<FileReference> getAllRecords() throws IOException {
+        try (Stream<FileReference> indexEntries = getIndexEntries()) {
+            return indexEntries.sorted(Comparator.comparing(FileReference::getPath)).collect(Collectors.toList());
         }
     }
 
-    public Optional<IndexRecord> get(Path path) throws IOException {
-        try (Stream<IndexRecord> indexEntries = getIndexEntries()) {
+    public Optional<FileReference> get(Path path) throws IOException {
+        try (Stream<FileReference> indexEntries = getIndexEntries()) {
             return indexEntries
                 .filter(ioPredicate(record -> repositoryRoot.resolve(record.getPath()).equals(path)))
                 .findFirst();
@@ -54,23 +54,23 @@ public class IndexManager {
     }
 
     public void set(Path path, String hash) throws IOException {
-        List<IndexRecord> indexRecords = new ArrayList<>(getAllRecords());
-        indexRecords.removeIf(record -> repositoryRoot.resolve(record.getPath()).equals(path));
-        indexRecords.add(IndexRecord.fromPath(hash, repositoryRoot.relativize(path)));
-        updateIndex(indexRecords);
+        List<FileReference> fileReferences = new ArrayList<>(getAllRecords());
+        fileReferences.removeIf(record -> repositoryRoot.resolve(record.getPath()).equals(path));
+        fileReferences.add(FileReference.fromPath(hash, repositoryRoot.relativize(path)));
+        updateIndex(fileReferences);
     }
 
     public void delete(Path path) throws IOException {
-        List<IndexRecord> indexRecords = new ArrayList<>(getAllRecords());
-        indexRecords.removeIf(record -> repositoryRoot.resolve(record.getPath()).equals(path));
-        updateIndex(indexRecords);
+        List<FileReference> fileReferences = new ArrayList<>(getAllRecords());
+        fileReferences.removeIf(record -> repositoryRoot.resolve(record.getPath()).equals(path));
+        updateIndex(fileReferences);
     }
 
-    private Stream<IndexRecord> getIndexEntries() throws IOException {
+    private Stream<FileReference> getIndexEntries() throws IOException {
         return Files.lines(indexFile, ENCODING).map(line -> {
             String[] splitted = line.split(" ", 2);
             List<String> pathParts = Arrays.asList(splitted[1].split("/"));
-            return new IndexRecord(splitted[0], pathParts);
+            return new FileReference(splitted[0], pathParts);
         });
     }
 }

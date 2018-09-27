@@ -89,7 +89,7 @@ public class RepositoryManagerStatusTest {
     }
 
     @Test
-    public void committed_but_removed_file_can_be_seen_in_removed_files() throws IOException {
+    public void committed_but_deleted_file_can_be_seen_in_missing_files() throws IOException {
         Path newFile = createFile("new_file", "");
         repository.addFile(newFile);
         repository.commit("first commit");
@@ -98,9 +98,39 @@ public class RepositoryManagerStatusTest {
 
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
-                .withRemovedFiles(newFile)
+                .withMissingFiles(newFile)
         );
     }
+
+    @Test
+    public void removed_with_repository_files_can_be_seen_in_deleted_files() throws IOException {
+        Path newFile = createFile("new_file", "");
+        repository.addFile(newFile);
+        repository.commit("first commit");
+
+        repository.remove(newFile);
+
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .withDeletedFiles(newFile)
+        );
+    }
+
+    @Test
+    public void deleted_and_then_removed_with_repository_file_is_in_deleted_files() throws IOException {
+        Path newFile = createFile("new_file", "");
+        repository.addFile(newFile);
+        repository.commit("first commit");
+
+        Files.delete(newFile);
+        repository.remove(newFile);
+
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .withDeletedFiles(newFile)
+        );
+    }
+
 
     private Path createFile(Path file, String content) throws IOException {
         Path newFile = tempFolder.getRoot().toPath().resolve(file);

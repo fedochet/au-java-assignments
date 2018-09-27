@@ -7,5 +7,5 @@ import java.util.List;
 @Data
 public final class FileTree {
     private final String hash;
-    private final List<FileRef> children;
+    private final List<HashRef> children;
 }

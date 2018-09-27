@@ -25,7 +25,7 @@ public class FileTreeRepository {
     private final Path root;
 
     @NotNull
-    public FileTree createTree(List<FileRef> refs) throws IOException {
+    public FileTree createTree(List<HashRef> refs) throws IOException {
         String hash = hashTree(refs);
         if (exists(hash)) {
             throw new IllegalArgumentException("File tree with " + hash + " already exists!");
@@ -51,15 +51,13 @@ public class FileTreeRepository {
 
         try (InputStream inputStream = Files.newInputStream(root.resolve(hash))) {
             inputStream.skip(MARKER_LENGTH);
-
-            List<FileRef> collect = deserializeReferences(inputStream);
-
+            List<HashRef> collect = deserializeReferences(inputStream);
             return Optional.of(new FileTree(hash, collect));
         }
     }
 
     @NotNull
-    public String hashTree(List<FileRef> refs) throws IOException {
+    public String hashTree(List<HashRef> refs) throws IOException {
         if (refs.isEmpty()) {
             throw new IllegalStateException("Cannot create empty file tree!");
         }
@@ -77,7 +75,7 @@ public class FileTreeRepository {
         );
     }
 
-    private InputStream serializeReferences(List<FileRef> refs) throws IOException {
+    private InputStream serializeReferences(List<HashRef> refs) throws IOException {
         String serializedText = refs.stream()
             .map(this::serializeReference)
             .collect(Collectors.joining(System.getProperty("line.separator")));
@@ -85,19 +83,19 @@ public class FileTreeRepository {
         return IOUtils.toInputStream(serializedText, "UTF-8");
     }
 
-    private List<FileRef> deserializeReferences(InputStream inputStream) throws IOException {
+    private List<HashRef> deserializeReferences(InputStream inputStream) throws IOException {
         return IOUtils.readLines(inputStream, ENCODING).stream()
             .map(this::deserializeRef)
             .collect(Collectors.toList());
     }
 
-    private String serializeReference(FileRef r) {
+    private String serializeReference(HashRef r) {
         return String.format("%s %s %s", r.getHash(), r.getType().name(), r.getName());
     }
 
-    private FileRef deserializeRef(String line) {
+    private HashRef deserializeRef(String line) {
         String[] args = line.split(" ", 3);
-        return new FileRef(args[0], FileRef.Type.valueOf(args[1]), args[2]);
+        return new HashRef(args[0], HashRef.Type.valueOf(args[1]), args[2]);
     }
 
 }

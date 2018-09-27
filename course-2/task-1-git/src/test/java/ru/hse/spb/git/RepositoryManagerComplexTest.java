@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import ru.hse.spb.git.index.IndexRecord;
+import ru.hse.spb.git.index.FileReference;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -47,7 +47,7 @@ public class RepositoryManagerComplexTest {
 
         String hash1 = repository.addFile(f1);
         assertThat(repository.getCurrentIndex()).containsExactly(
-            IndexRecord.fromPath(hash1, relativeF1)
+            FileReference.fromPath(hash1, relativeF1)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -57,7 +57,7 @@ public class RepositoryManagerComplexTest {
 
         String commit1 = repository.commit("commit 1");
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(hash1, relativeF1)
+            FileReference.fromPath(hash1, relativeF1)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -67,8 +67,8 @@ public class RepositoryManagerComplexTest {
 
         String hash2 = repository.addFile(f2);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(hash1, relativeF1),
-            IndexRecord.fromPath(hash2, relativeF2)
+            FileReference.fromPath(hash1, relativeF1),
+            FileReference.fromPath(hash2, relativeF2)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -79,8 +79,8 @@ public class RepositoryManagerComplexTest {
 
         String commit2 = repository.commit("commit 2");
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(hash1, relativeF1),
-            IndexRecord.fromPath(hash2, relativeF2)
+            FileReference.fromPath(hash1, relativeF1),
+            FileReference.fromPath(hash2, relativeF2)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -90,9 +90,9 @@ public class RepositoryManagerComplexTest {
 
         String hash3 = repository.addFile(f3);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(hash1, relativeF1),
-            IndexRecord.fromPath(hash2, relativeF2),
-            IndexRecord.fromPath(hash3, relativeF3)
+            FileReference.fromPath(hash1, relativeF1),
+            FileReference.fromPath(hash2, relativeF2),
+            FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -102,9 +102,9 @@ public class RepositoryManagerComplexTest {
 
         String commit3 = repository.commit("commit 3");
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(hash1, relativeF1),
-            IndexRecord.fromPath(hash2, relativeF2),
-            IndexRecord.fromPath(hash3, relativeF3)
+            FileReference.fromPath(hash1, relativeF1),
+            FileReference.fromPath(hash2, relativeF2),
+            FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -113,9 +113,9 @@ public class RepositoryManagerComplexTest {
 
         FileUtils.write(f1.toFile(), "f1 changed", UTF_8);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(hash1, relativeF1),
-            IndexRecord.fromPath(hash2, relativeF2),
-            IndexRecord.fromPath(hash3, relativeF3)
+            FileReference.fromPath(hash1, relativeF1),
+            FileReference.fromPath(hash2, relativeF2),
+            FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -125,9 +125,9 @@ public class RepositoryManagerComplexTest {
 
         String modifiedHash1 = repository.addFile(f1);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(modifiedHash1, relativeF1),
-            IndexRecord.fromPath(hash2, relativeF2),
-            IndexRecord.fromPath(hash3, relativeF3)
+            FileReference.fromPath(modifiedHash1, relativeF1),
+            FileReference.fromPath(hash2, relativeF2),
+            FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -137,9 +137,9 @@ public class RepositoryManagerComplexTest {
 
         String commit4 = repository.commit("commit 4");
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(modifiedHash1, relativeF1),
-            IndexRecord.fromPath(hash2, relativeF2),
-            IndexRecord.fromPath(hash3, relativeF3)
+            FileReference.fromPath(modifiedHash1, relativeF1),
+            FileReference.fromPath(hash2, relativeF2),
+            FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -148,7 +148,7 @@ public class RepositoryManagerComplexTest {
 
         repository.checkoutToCommit(commit1);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(hash1, relativeF1)
+            FileReference.fromPath(hash1, relativeF1)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -160,8 +160,8 @@ public class RepositoryManagerComplexTest {
 
         repository.checkoutToCommit(commit2);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(hash1, relativeF1),
-            IndexRecord.fromPath(hash2, relativeF2)
+            FileReference.fromPath(hash1, relativeF1),
+            FileReference.fromPath(hash2, relativeF2)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -173,9 +173,9 @@ public class RepositoryManagerComplexTest {
 
         repository.checkoutToCommit(commit3);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(hash1, relativeF1),
-            IndexRecord.fromPath(hash2, relativeF2),
-            IndexRecord.fromPath(hash3, relativeF3)
+            FileReference.fromPath(hash1, relativeF1),
+            FileReference.fromPath(hash2, relativeF2),
+            FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -187,9 +187,9 @@ public class RepositoryManagerComplexTest {
 
         repository.checkoutToCommit(commit4);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
-            IndexRecord.fromPath(modifiedHash1, relativeF1),
-            IndexRecord.fromPath(hash2, relativeF2),
-            IndexRecord.fromPath(hash3, relativeF3)
+            FileReference.fromPath(modifiedHash1, relativeF1),
+            FileReference.fromPath(hash2, relativeF2),
+            FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
             new StatusBuilder()
@@ -198,7 +198,38 @@ public class RepositoryManagerComplexTest {
         assertThat(f1).hasContent("f1 changed");
         assertThat(f2).hasContent("f2 initial");
         assertThat(f3).hasContent("f3 initial");
+    }
 
+    @Test
+    public void sequential_commits_with_deletions() throws IOException {
+        Path repositoryRoot = repository.getRepositoryRoot();
+
+        Path f1 = createFile("f1", "f1 initial");
+        Path f2 = createFile(Paths.get("dir1", "f2"), "f2 initial");
+        Path f3 = createFile(Paths.get("dir2", "dir3", "f3"), "f3 initial");
+
+        Path relativeF1 = repositoryRoot.relativize(f1);
+        Path relativeF2 = repositoryRoot.relativize(f2);
+        Path relativeF3 = repositoryRoot.relativize(f3);
+
+        repository.addFile(f1);
+        repository.addFile(f2);
+        repository.addFile(f3);
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder().withStagedFiles(f1, f2, f3)
+        );
+
+        repository.commit("commit 1");
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder().withCommittedFiles(f1, f2, f3)
+        );
+
+        Files.delete(f1);
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .withMissingFiles(f1)
+                .withCommittedFiles(f2, f3)
+        );
     }
 
     private Path createFile(Path file, String content) throws IOException {

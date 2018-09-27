@@ -3,7 +3,7 @@ package ru.hse.spb.git.filetree;
 import lombok.Data;
 
 @Data
-public final class FileRef {
+public final class HashRef {
     public enum Type {
         REGULAR_FILE, DIRECTORY
     }

@@ -9,11 +9,11 @@ import ru.hse.spb.git.blob.FileBlobRepository;
 import ru.hse.spb.git.commit.Commit;
 import ru.hse.spb.git.commit.CommitInfo;
 import ru.hse.spb.git.commit.CommitRepository;
-import ru.hse.spb.git.filetree.FileRef;
 import ru.hse.spb.git.filetree.FileTree;
 import ru.hse.spb.git.filetree.FileTreeRepository;
+import ru.hse.spb.git.filetree.HashRef;
+import ru.hse.spb.git.index.FileReference;
 import ru.hse.spb.git.index.IndexManager;
-import ru.hse.spb.git.index.IndexRecord;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,48 +30,79 @@ import static ru.hse.spb.git.CollectionUtils.ioFunction;
 import static ru.hse.spb.git.CollectionUtils.ioPredicate;
 
 interface Status {
-    @NotNull
-    Set<Path> getCommittedFiles();
-    @NotNull
-    Set<Path> getStagedFiles();
-    @NotNull
-    Set<Path> getNotStagedFiles();
-    @NotNull
-    Set<Path> getRemovedFiles();
+    /**
+     * New files.
+     */
     @NotNull
     Set<Path> getNotTrackedFiles();
+
+    /**
+     * Modified but not yet staged files.
+     */
+    @NotNull
+    Set<Path> getNotStagedFiles();
+
+    /**
+     * Files staged for the next commit.
+     */
+    @NotNull
+    Set<Path> getStagedFiles();
+
+    /**
+     * Files contained in current commit.
+     */
+    @NotNull
+    Set<Path> getCommittedFiles();
+
+    /**
+     * Files staged for deletion.
+     */
+    @NotNull
+    Set<Path> getDeletedFiles();
+
+    /**
+     * Committed but missing files.
+     */
+    @NotNull
+    Set<Path> getMissingFiles();
 }
 
 @Data
 final class StatusBuilder implements Status {
+    private final Set<Path> notTrackedFiles = new HashSet<>();
     private final Set<Path> committedFiles = new HashSet<>();
     private final Set<Path> stagedFiles = new HashSet<>();
     private final Set<Path> notStagedFiles = new HashSet<>();
-    private final Set<Path> removedFiles = new HashSet<>();
-    private final Set<Path> notTrackedFiles = new HashSet<>();
+    private final Set<Path> deletedFiles = new HashSet<>();
+    private final Set<Path> missingFiles = new HashSet<>();
 
-    public StatusBuilder withCommittedFiles(Path... path) {
-        committedFiles.addAll(Arrays.asList(path));
+    public StatusBuilder withCommittedFiles(Path... paths) {
+        Collections.addAll(committedFiles, paths);
         return this;
     }
 
-    public StatusBuilder withStagedFiles(Path... path) {
-        stagedFiles.addAll(Arrays.asList(path));
+    public StatusBuilder withStagedFiles(Path... paths) {
+        Collections.addAll(stagedFiles, paths);
         return this;
     }
 
     public StatusBuilder withNotStagedFiles(Path... paths) {
-        notStagedFiles.addAll(Arrays.asList(paths));
+        Collections.addAll(notStagedFiles, paths);
         return this;
     }
 
-    public StatusBuilder withRemovedFiles(Path... paths) {
-        removedFiles.addAll(Arrays.asList(paths));
+    public StatusBuilder withDeletedFiles(Path... paths) {
+        Collections.addAll(deletedFiles, paths);
         return this;
     }
 
     public StatusBuilder withNotTrackedFiles(Path... paths) {
-        notTrackedFiles.addAll(Arrays.asList(paths));
+        Collections.addAll(notTrackedFiles, paths);
+        return this;
+    }
+
+    public StatusBuilder withMissingFiles(Path... paths) {
+        Collections.addAll(missingFiles, paths);
         return this;
     }
 }
@@ -229,22 +260,57 @@ public class RepositoryManager {
     public Status getStatus() throws IOException {
         StatusBuilder statusBuilder = new StatusBuilder();
         fillStatusInDir(statusBuilder, repositoryRoot);
-        catchRemovedFromIndex(statusBuilder);
+        gatherRemovedFiles(statusBuilder);
 
         return statusBuilder;
     }
 
+    public void remove(Path newFile) throws IOException {
+        indexManager.delete(newFile);
+    }
+
     @TestOnly
-    public Set<IndexRecord> getCurrentIndex() throws IOException {
+    public Set<FileReference> getCurrentIndex() throws IOException {
         return new HashSet<>(indexManager.getAllRecords());
     }
 
-    private void catchRemovedFromIndex(StatusBuilder statusBuilder) throws IOException {
-        for (IndexRecord record : indexManager.getAllRecords()) {
-            if (!Files.exists(repositoryRoot.resolve(record.getPath()))) {
-                statusBuilder.withRemovedFiles(repositoryRoot.resolve(record.getPath()));
+    private List<FileReference> getFilesInTree(FileTree tree, Deque<String> path) throws IOException {
+        List<FileReference> files = new ArrayList<>();
+
+        for (HashRef child : tree.getChildren()) {
+            path.addLast(child.getName());
+            if (child.getType().equals(HashRef.Type.DIRECTORY)) {
+                files.addAll(getFilesInTree(getExistingTree(child.getHash()), path));
+            } else {
+                files.add(new FileReference(child.getHash(), new ArrayList<>(path)));
+            }
+            path.removeLast();
+        }
+
+        return files;
+    }
+
+    private void gatherRemovedFiles(StatusBuilder statusBuilder) throws IOException {
+        Optional<String> headCommit = getHeadCommit();
+        if (!headCommit.isPresent()) {
+            return;
+        }
+
+        String hash = headCommit.get();
+        FileTree rootTree = getExistingTree(getExistingCommit(hash).getTreeHash());
+        List<FileReference> files = getFilesInTree(rootTree, new ArrayDeque<>());
+        for (FileReference ref : files) {
+            Path fullPath = repositoryRoot.resolve(ref.getPath());
+            boolean fileIsRemovedFromDisk = Files.notExists(fullPath);
+            boolean fileIsNotInIndex = !indexManager.get(fullPath).isPresent();
+
+            if (fileIsRemovedFromDisk && fileIsNotInIndex) {
+                statusBuilder.withDeletedFiles(fullPath);
+            } else if (fileIsRemovedFromDisk) {
+                statusBuilder.withMissingFiles(fullPath);
             }
         }
+
     }
 
     private void fillStatusInDir(StatusBuilder statusBuilder, Path folder) throws IOException {
@@ -275,7 +341,7 @@ public class RepositoryManager {
     }
 
     private void addBlobbedFile(StatusBuilder statusBuilder, Path folderFile) throws IOException {
-        Optional<String> indexVersion = indexManager.get(folderFile).map(IndexRecord::getHash);
+        Optional<String> indexVersion = indexManager.get(folderFile).map(FileReference::getHash);
         Optional<String> commitVersion = getCurrentCommitVersionOfFile(folderFile);
 
         if (indexVersion.isPresent()) {
@@ -287,7 +353,7 @@ public class RepositoryManager {
         } else if (!commitVersion.isPresent()) {
             statusBuilder.withNotTrackedFiles(folderFile);
         } else {
-            throw new IllegalArgumentException("File " + folderFile + " is committed, but not in index!");
+            statusBuilder.withDeletedFiles(folderFile);
         }
     }
 
@@ -307,9 +373,9 @@ public class RepositoryManager {
         }
 
         Path current = pathPieces.next();
-        for (FileRef child : currentLevel.getChildren()) {
+        for (HashRef child : currentLevel.getChildren()) {
             if (child.getName().equals(current.getFileName().toString())) {
-                if (child.getType().equals(FileRef.Type.DIRECTORY)) {
+                if (child.getType().equals(HashRef.Type.DIRECTORY)) {
                     return locateInTree(getExistingTree(child.getHash()), pathPieces);
                 } else if (!pathPieces.hasNext()) {
                     return Optional.of(child.getHash());
@@ -357,18 +423,18 @@ public class RepositoryManager {
     private Optional<String> buildTree(Path folder) throws IOException {
         List<Path> folderFiles = getFolderFiles(folder);
 
-        List<FileRef> refs = new ArrayList<>();
+        List<HashRef> refs = new ArrayList<>();
         for (Path folderFile : folderFiles) {
             String fileName = folderFile.getFileName().toString();
 
             if (Files.isDirectory(folderFile)) {
                 buildTree(folderFile).ifPresent(treeHash ->
-                    refs.add(new FileRef(treeHash, FileRef.Type.DIRECTORY, fileName))
+                    refs.add(new HashRef(treeHash, HashRef.Type.DIRECTORY, fileName))
                 );
             } else {
                 String blobHash = blobRepository.hashBlob(folderFile);
                 if (indexManager.get(folderFile).isPresent()) {
-                    refs.add(new FileRef(blobHash, FileRef.Type.REGULAR_FILE, fileName));
+                    refs.add(new HashRef(blobHash, HashRef.Type.REGULAR_FILE, fileName));
                 }
             }
         }
@@ -396,8 +462,8 @@ public class RepositoryManager {
     private void removeTreeInDir(FileTree fileTree, Path dir) throws IOException {
         checkFileTreeIsValid(fileTree);
 
-        for (FileRef child : fileTree.getChildren()) {
-            if (child.getType().equals(FileRef.Type.DIRECTORY)) {
+        for (HashRef child : fileTree.getChildren()) {
+            if (child.getType().equals(HashRef.Type.DIRECTORY)) {
                 Path targetDir = dir.resolve(child.getName());
                 Files.createDirectories(targetDir);
                 FileTree childFileTree = getExistingTree(child.getHash());
@@ -419,8 +485,8 @@ public class RepositoryManager {
     private void restoreTreeInDir(FileTree fileTree, Path dir) throws IOException {
         checkFileTreeIsValid(fileTree);
 
-        for (FileRef child : fileTree.getChildren()) {
-            if (child.getType().equals(FileRef.Type.DIRECTORY)) {
+        for (HashRef child : fileTree.getChildren()) {
+            if (child.getType().equals(HashRef.Type.DIRECTORY)) {
                 Path targetDir = dir.resolve(child.getName());
                 Files.createDirectories(targetDir);
                 FileTree childFileTree = getExistingTree(child.getHash());
@@ -458,8 +524,8 @@ public class RepositoryManager {
     }
 
     private void checkFileTreeIsValid(FileTree fileTree) throws IOException {
-        for (FileRef child : fileTree.getChildren()) {
-            if (child.getType().equals(FileRef.Type.REGULAR_FILE)) {
+        for (HashRef child : fileTree.getChildren()) {
+            if (child.getType().equals(HashRef.Type.REGULAR_FILE)) {
                 if (!blobRepository.exists(child.getHash())) {
                     throw new IllegalArgumentException(String.format(
                         "File tree with hash %s is invalid; file reference %s points to non-existent file.",
