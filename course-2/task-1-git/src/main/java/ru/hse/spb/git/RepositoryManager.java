@@ -312,6 +312,7 @@ public class RepositoryManager {
         );
     }
 
+    // TODO: 29.09.18 create some virtual tree to collect commit information from index
     private Optional<String> buildTree(Path folder) throws IOException {
         List<Path> folderFiles = getFolderFiles(folder);
 

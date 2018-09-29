@@ -209,10 +209,6 @@ public class RepositoryManagerComplexTest {
         Path f2 = createFile(Paths.get("dir1", "f2"), "f2 initial");
         Path f3 = createFile(Paths.get("dir2", "dir3", "f3"), "f3 initial");
 
-        Path relativeF1 = repositoryRoot.relativize(f1);
-        Path relativeF2 = repositoryRoot.relativize(f2);
-        Path relativeF3 = repositoryRoot.relativize(f3);
-
         repository.addFile(f1);
         repository.addFile(f2);
         repository.addFile(f3);
@@ -231,6 +227,30 @@ public class RepositoryManagerComplexTest {
                 .withMissingFiles(f1)
                 .withCommittedFiles(f2, f3)
         );
+
+        Path f4 = createFile(Paths.get("f4"), "f4 initial");
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .withMissingFiles(f1)
+                .withCommittedFiles(f2, f3)
+                .withNotTrackedFiles(f4)
+        );
+
+        repository.addFile(f4);
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .withMissingFiles(f1)
+                .withCommittedFiles(f2, f3)
+                .withStagedFiles(f4)
+        );
+
+        repository.commit("commit 2");
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .withMissingFiles(f1)
+                .withCommittedFiles(f2, f3, f4)
+        );
+
     }
 
     private Path createFile(Path file, String content) throws IOException {
