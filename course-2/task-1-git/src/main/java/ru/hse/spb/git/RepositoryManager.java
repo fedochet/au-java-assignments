@@ -172,7 +172,7 @@ public class RepositoryManager {
         return Optional.of(hash).filter(s -> !s.isEmpty());
     }
 
-    public void resetTo(String hash) throws IOException {
+    public void hardResetTo(String hash) throws IOException {
         checkoutToCommit(hash);
         updateMasterHead(getExistingCommit(hash));
         pointHeadToMaster();

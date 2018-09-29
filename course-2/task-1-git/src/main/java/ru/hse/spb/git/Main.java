@@ -136,7 +136,7 @@ public class Main {
 
         if (commandLine.getCommand() instanceof GitReset) {
             GitReset reset = commandLine.getCommand();
-            repository.resetTo(reset.hash);
+            repository.hardResetTo(reset.hash);
             return;
         }
     }

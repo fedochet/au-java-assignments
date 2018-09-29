@@ -18,7 +18,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.*;
 
 public class RepositoryManagerComplexTest {
-
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
     private RepositoryManager repository;
@@ -248,8 +247,76 @@ public class RepositoryManagerComplexTest {
                 .withMissingFiles(f1)
                 .withCommittedFiles(f2, f3, f4)
         );
-
     }
+
+    // This test somehow verifies that index is cleared correctly on checkouts
+    @Test
+    public void complex_workflow_test() throws IOException {
+        Path f1 = createFile("new_file_1", "file1");
+        Path f2 = createFile("new_file_2", "file2");
+
+        repository.addFile(f1);
+        String hashOne = repository.commit("commit 1");
+        repository.addFile(f2);
+        String hashTwo = repository.commit("commit 2");
+
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder().withCommittedFiles(f1, f2)
+        );
+
+        repository.hardResetTo(hashOne);
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder().withCommittedFiles(f1)
+        );
+
+        assertThat(f1).hasContent("file1");
+        assertThat(f2).doesNotExist();
+        assertThat(repository.getHeadCommit()).contains(hashOne);
+        assertThat(repository.getMasterHeadCommit()).contains(hashOne);
+
+        f2 = createFile("new_file_2", "file2");
+        Path f3 = createFile("new_file_3", "file3");
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .withCommittedFiles(f1)
+                .withNotTrackedFiles(f2, f3)
+        );
+
+        repository.addFile(f3);
+        String hashThree = repository.commit("commit 3");
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .withCommittedFiles(f1, f3)
+                .withNotTrackedFiles(f2)
+        );
+
+        assertThat(f1).hasContent("file1");
+        assertThat(f3).hasContent("file3");
+        assertThat(repository.getHeadCommit()).contains(hashThree);
+        assertThat(repository.getMasterHeadCommit()).contains(hashThree);
+
+        Files.delete(f2);
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder().withCommittedFiles(f1, f3)
+        );
+
+        repository.checkoutToCommit(hashOne);
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder().withCommittedFiles(f1)
+        );
+
+        repository.checkoutToCommit(hashThree);
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder().withCommittedFiles(f1, f3)
+        );
+
+        assertThat(f1).hasContent("file1");
+        assertThat(f2).doesNotExist();
+        assertThat(f3).hasContent("file3");
+        assertThat(repository.getHeadCommit()).contains(hashThree);
+        assertThat(repository.getMasterHeadCommit()).contains(hashThree);
+    }
+
 
     private Path createFile(Path file, String content) throws IOException {
         Path newFile = tempFolder.getRoot().toPath().resolve(file);
