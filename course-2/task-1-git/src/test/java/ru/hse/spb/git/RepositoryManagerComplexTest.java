@@ -203,8 +203,6 @@ public class RepositoryManagerComplexTest {
 
     @Test
     public void sequential_commits_with_deletions() throws IOException {
-        Path repositoryRoot = repository.getRepositoryRoot();
-
         Path f1 = createFile("f1", "f1 initial");
         Path f2 = createFile(Paths.get("dir1", "f2"), "f2 initial");
         Path f3 = createFile(Paths.get("dir2", "dir3", "f3"), "f3 initial");

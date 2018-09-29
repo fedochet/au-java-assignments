@@ -13,6 +13,7 @@ import ru.hse.spb.git.filetree.FileTreeRepository;
 import ru.hse.spb.git.filetree.HashRef;
 import ru.hse.spb.git.index.FileReference;
 import ru.hse.spb.git.index.IndexManager;
+import ru.hse.spb.git.index.VirtualFileTree;
 import ru.hse.spb.git.status.Status;
 import ru.hse.spb.git.status.StatusBuilder;
 
@@ -307,41 +308,14 @@ public class RepositoryManager {
     }
 
     private String buildRootTree() throws IOException {
-        return buildTree(repositoryRoot).orElseThrow(() ->
+        VirtualFileTree virtualFileTree = new VirtualFileTree();
+        for (FileReference reference : getCurrentIndex()) {
+            virtualFileTree.addFile(reference);
+        }
+
+        return virtualFileTree.buildFileTree(fileTreeRepository).orElseThrow(() ->
             new IllegalArgumentException("Cannot build tree without files!")
         );
-    }
-
-    // TODO: 29.09.18 create some virtual tree to collect commit information from index
-    private Optional<String> buildTree(Path folder) throws IOException {
-        List<Path> folderFiles = getFolderFiles(folder);
-
-        List<HashRef> refs = new ArrayList<>();
-        for (Path folderFile : folderFiles) {
-            String fileName = folderFile.getFileName().toString();
-
-            if (Files.isDirectory(folderFile)) {
-                buildTree(folderFile).ifPresent(treeHash ->
-                    refs.add(new HashRef(treeHash, HashRef.Type.DIRECTORY, fileName))
-                );
-            } else {
-                String blobHash = blobRepository.hashBlob(folderFile);
-                if (indexManager.get(folderFile).isPresent()) {
-                    refs.add(new HashRef(blobHash, HashRef.Type.REGULAR_FILE, fileName));
-                }
-            }
-        }
-
-        if (refs.isEmpty()) {
-            return Optional.empty();
-        }
-
-        String treeHash = fileTreeRepository.hashTree(refs);
-        if (fileTreeRepository.exists(treeHash)) {
-            return Optional.of(treeHash);
-        }
-
-        return Optional.of(fileTreeRepository.createTree(refs).getHash());
     }
 
     private List<Path> getFolderFiles(Path folder) throws IOException {
@@ -424,7 +398,7 @@ public class RepositoryManager {
 
     private void checkFileTreeIsValid(FileTree fileTree) throws IOException {
         for (HashRef child : fileTree.getChildren()) {
-            if (child.getType().equals(HashRef.Type.REGULAR_FILE)) {
+            if (child.getType().equals(HashRef.Type.FILE)) {
                 if (!blobRepository.exists(child.getHash())) {
                     throw new IllegalArgumentException(String.format(
                         "File tree with hash %s is invalid; file reference %s points to non-existent file.",
