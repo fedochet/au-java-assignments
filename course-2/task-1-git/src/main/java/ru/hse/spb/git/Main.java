@@ -1,13 +1,18 @@
 package ru.hse.spb.git;
 
+import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine;
 import ru.hse.spb.git.commit.CommitInfo;
+import ru.hse.spb.git.status.Status;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static picocli.CommandLine.Command;
 import static picocli.CommandLine.Parameters;
@@ -23,7 +28,48 @@ class GitLog {
 }
 
 @Command(name = "status")
-class GitStatus {
+class GitStatusCommand {
+    void invoke(Path repositoryDir) throws IOException {
+        Optional<RepositoryManager> possibleRepository = RepositoryManager.open(repositoryDir);
+
+        if (!possibleRepository.isPresent()) {
+            System.out.println("Git repository is not initialised properly in " + repositoryDir + "!");
+            return;
+        }
+
+        Status status = possibleRepository.get().getStatus();
+        printStatus(possibleRepository.get().getRepositoryRoot(), status);
+    }
+
+    private void printStatus(Path root, Status status) {
+        String stagedFiles =    formatFiles(root, status.getStagedFiles(), "modified: ");
+        String notStagedFiles = formatFiles(root, status.getNotStagedFiles(), "modified: ");
+
+        String deletedFiles = formatFiles(root, status.getDeletedFiles(), "deleted: ");
+        String missingFiles = formatFiles(root, status.getMissingFiles(), "deleted: ");
+
+        String notTrackedFiles = formatFiles(root, status.getNotTrackedFiles(), "");
+
+        Arrays.asList(
+            "On branch master",
+            "Changes to be committed:",
+            stagedFiles,
+            deletedFiles,
+            "",
+            "Changes not staged for commit:",
+            notStagedFiles,
+            notTrackedFiles,
+            missingFiles
+        ).forEach(System.out::println);
+    }
+
+    private String formatFiles(Path relative, @NotNull Set<Path> files, String prefix) {
+        return files.stream()
+            .map(relative::relativize)
+            .map(Path::toString)
+            .map(s -> "\t" + prefix + s)
+            .collect(Collectors.joining(System.lineSeparator()));
+    }
 }
 
 @Command(name = "add")
@@ -65,7 +111,7 @@ class GitReset {
     GitReset.class,
     GitAdd.class,
     GitRm.class,
-    GitStatus.class,
+    GitStatusCommand.class,
 })
 class GitCommand {
 }
@@ -117,7 +163,7 @@ public class Main {
 
         if (commandLine.getCommand() instanceof GitAdd) {
             GitAdd gitAdd = commandLine.getCommand();
-            repository.addFile(gitAdd.file);
+            repository.addFile(gitAdd.file.toAbsolutePath());
             return;
         }
 
@@ -139,6 +185,9 @@ public class Main {
             repository.hardResetTo(reset.hash);
             return;
         }
+
+        GitStatusCommand statusCommand = commandLine.getCommand();
+        statusCommand.invoke(repositoryDir);
     }
 
     private static void printCommitLog(List<CommitInfo> log) {
