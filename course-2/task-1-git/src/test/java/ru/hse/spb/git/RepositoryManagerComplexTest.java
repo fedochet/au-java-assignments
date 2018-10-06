@@ -3,6 +3,7 @@ package ru.hse.spb.git;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -246,6 +247,21 @@ public class RepositoryManagerComplexTest {
             new StatusBuilder()
                 .withMissingFiles(f1)
                 .withCommittedFiles(f2, f3, f4)
+        );
+    }
+
+    @Ignore("Hard to implement.")
+    @Test
+    public void added_but_deleted_file_appears_both_in_staged_and_missing() throws IOException {
+        Path f1 = createFile("new_file_1", "file1");
+
+        repository.addFile(f1);
+        Files.delete(f1);
+
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .withStagedFiles(f1)
+                .withMissingFiles(f1)
         );
     }
 
