@@ -17,32 +17,51 @@ import java.util.stream.Collectors;
 import static picocli.CommandLine.Command;
 import static picocli.CommandLine.Parameters;
 
+interface Invokable {
+    void invoke(@NotNull RepositoryManager manager) throws IOException;
+}
+
 @Command(name = "init")
 class GitInit {
 }
 
 @Command(name = "log")
-class GitLog {
+class GitLog implements Invokable {
     @Parameters(index = "0", arity = "0..1", description = "from commit")
-    String hash;
+    private String hash;
+
+    @Override
+    public void invoke(@NotNull RepositoryManager repository) throws IOException {
+        GitLog logCommand = this;
+        List<CommitInfo> log = logCommand.hash != null ? repository.getLog(logCommand.hash) : repository.getLog();
+
+        printCommitLog(log);
+    }
+
+    private void printCommitLog(List<CommitInfo> log) {
+        if (log.isEmpty()) {
+            System.out.println("No commits yet.");
+        } else {
+            for (CommitInfo commitInfo : log) {
+                System.out.printf("commit %s\n", commitInfo.getHash());
+                System.out.println();
+                System.out.printf("%s\n", commitInfo.getMessage());
+            }
+        }
+    }
+
 }
 
 @Command(name = "status")
-class GitStatusCommand {
-    void invoke(Path repositoryDir) throws IOException {
-        Optional<RepositoryManager> possibleRepository = RepositoryManager.open(repositoryDir);
-
-        if (!possibleRepository.isPresent()) {
-            System.out.println("Git repository is not initialised properly in " + repositoryDir + "!");
-            return;
-        }
-
-        Status status = possibleRepository.get().getStatus();
-        printStatus(possibleRepository.get().getRepositoryRoot(), status);
+class GitStatusCommand implements Invokable {
+    @Override
+    public void invoke(@NotNull RepositoryManager repositoryManager) throws IOException {
+        Status status = repositoryManager.getStatus();
+        printStatus(repositoryManager.getRepositoryRoot(), status);
     }
 
     private void printStatus(Path root, Status status) {
-        String stagedFiles =    formatFiles(root, status.getStagedFiles(), "modified: ");
+        String stagedFiles = formatFiles(root, status.getStagedFiles(), "modified: ");
         String notStagedFiles = formatFiles(root, status.getNotStagedFiles(), "modified: ");
 
         String deletedFiles = formatFiles(root, status.getDeletedFiles(), "deleted: ");
@@ -79,22 +98,44 @@ class GitAdd {
 }
 
 @Command(name = "rm")
-class GitRm {
+class GitRm implements Invokable {
     @Parameters(index = "0", paramLabel = "FILE")
-    Path file;
+    private Path file;
+
+    @Override
+    public void invoke(@NotNull RepositoryManager manager) throws IOException {
+        manager.remove(file.toAbsolutePath());
+    }
 }
 
 @Command(name = "commit")
-class GitCommit {
+class GitCommit implements Invokable {
     @Parameters(index = "0", paramLabel = "MESSAGE")
-    String message;
+    private String message;
+
+    @Override
+    public void invoke(@NotNull RepositoryManager repositoryManager) throws IOException {
+        repositoryManager.commit(message);
+    }
 }
 
 //TODO add option for `-- file` syntax
 @Command(name = "checkout")
-class GitCheckout {
+class GitCheckout implements Invokable {
     @Parameters(index = "0", paramLabel = "HASH")
-    String hash;
+    private String hash;
+
+    @Override
+    public void invoke(@NotNull RepositoryManager repository) throws IOException {
+        if (hash.equals("master")) {
+            String masterHead = repository.getMasterHeadCommit().orElseThrow(() ->
+                new IllegalArgumentException("Cannot checkout to master, because there are no commits in it.")
+            );
+            repository.checkoutToCommit(masterHead);
+        } else {
+            repository.checkoutToCommit(hash);
+        }
+    }
 }
 
 @Command(name = "reset")
@@ -146,37 +187,9 @@ public class Main {
 
         RepositoryManager repository = possibleRepository.get();
 
-        if (commandLine.getCommand() instanceof GitLog) {
-            GitLog logCommand = commandLine.getCommand();
-            List<CommitInfo> log = logCommand.hash != null ? repository.getLog(logCommand.hash) : repository.getLog();
-
-            printCommitLog(log);
-
-            return;
-        }
-
-        if (commandLine.getCommand() instanceof GitCommit) {
-            GitCommit commit = commandLine.getCommand();
-            repository.commit(commit.message);
-            return;
-        }
-
         if (commandLine.getCommand() instanceof GitAdd) {
             GitAdd gitAdd = commandLine.getCommand();
             repository.addFile(gitAdd.file.toAbsolutePath());
-            return;
-        }
-
-        if (commandLine.getCommand() instanceof GitCheckout) {
-            GitCheckout checkout = commandLine.getCommand();
-            if (checkout.hash.equals("master")) {
-                String masterHead = repository.getMasterHeadCommit().orElseThrow(() ->
-                    new IllegalArgumentException("Cannot checkout to master, because there are no commits in it.")
-                );
-                repository.checkoutToCommit(masterHead);
-            } else {
-                repository.checkoutToCommit(checkout.hash);
-            }
             return;
         }
 
@@ -186,20 +199,8 @@ public class Main {
             return;
         }
 
-        GitStatusCommand statusCommand = commandLine.getCommand();
-        statusCommand.invoke(repositoryDir);
-    }
-
-    private static void printCommitLog(List<CommitInfo> log) {
-        if (log.isEmpty()) {
-            System.out.println("No commits yet.");
-        } else {
-            for (CommitInfo commitInfo : log) {
-                System.out.printf("commit %s\n", commitInfo.getHash());
-                System.out.println();
-                System.out.printf("%s\n", commitInfo.getMessage());
-            }
-        }
+        Invokable command = commandLine.getCommand();
+        command.invoke(repository);
     }
 
     private static Path currentDir() {
