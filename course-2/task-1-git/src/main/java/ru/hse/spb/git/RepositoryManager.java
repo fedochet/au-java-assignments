@@ -417,4 +417,8 @@ public class RepositoryManager {
             }
         }
     }
+
+    public void checkoutFile(Path filesToCheckout) {
+        throw new IllegalArgumentException("Not implemented yet");
+    }
 }

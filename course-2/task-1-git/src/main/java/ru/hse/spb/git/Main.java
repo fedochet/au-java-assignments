@@ -10,10 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static picocli.CommandLine.Command;
@@ -54,7 +51,6 @@ class GitLog implements RepositoryAction {
             }
         }
     }
-
 }
 
 @Command(name = "status")
@@ -133,12 +129,28 @@ class GitCommit implements RepositoryAction {
 //TODO add option for `-- file` syntax
 @Command(name = "checkout")
 class GitCheckout implements RepositoryAction {
-    @Parameters(index = "0", paramLabel = "HASH")
+    @Parameters(arity = "0..1", index = "0", paramLabel = "HASH")
     private String hash;
+
+    @CommandLine.Option(
+        names = {"-f", "--file"},
+        description = "Overwrite paths in the working tree by replacing with the contents in the index or in the last commit."
+    )
+    private Path filesToCheckout;
 
     @Override
     public void invoke(@NotNull RepositoryManager repository) throws IOException {
-        if (hash.equals("master")) {
+        if (hash != null && filesToCheckout != null) {
+            throw new IllegalArgumentException("Cannot specify both file to checkout and commit to checkout!");
+        }
+
+        if (hash == null && filesToCheckout == null) {
+            throw new IllegalArgumentException("Empty checkout command!");
+        }
+
+        if (filesToCheckout != null) {
+            repository.checkoutFile(filesToCheckout);
+        } else if (hash.equals("master")) {
             String masterHead = repository.getMasterHeadCommit().orElseThrow(() ->
                 new IllegalArgumentException("Cannot checkout to master, because there are no commits in it.")
             );
@@ -176,6 +188,15 @@ class GitCommand {
 public class Main {
 
     public static void main(String[] args) throws IOException {
+        try {
+            runGit(args);
+        } catch (RuntimeException e) {
+            System.err.println("Error: " + e.getMessage());
+            System.exit(1);
+        }
+    }
+
+    private static void runGit(String[] args) throws IOException {
         CommandLine commandLine = new CommandLine(new GitCommand());
         List<CommandLine> parse = commandLine.parse(args);
 
