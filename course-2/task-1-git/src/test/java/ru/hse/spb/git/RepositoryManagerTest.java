@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -68,8 +69,8 @@ public class RepositoryManagerTest {
         String commitTwo = repository.commit("second commit");
 
         assertThat(repository.getLog()).containsExactly(
-            new CommitInfo(commitTwo, "second commit"),
-            new CommitInfo(commitOne, "first commit")
+            new CommitInfo(commitTwo, Instant.now(), "second commit"),
+            new CommitInfo(commitOne, Instant.now(), "first commit")
         );
     }
 

@@ -139,7 +139,7 @@ public class RepositoryManager {
         }
 
         return commitsFrom(headCommit.get().getHash())
-            .map(c -> new CommitInfo(c.getHash(), c.getMessage()))
+            .map(c -> new CommitInfo(c.getHash(), c.getTimestamp(), c.getMessage()))
             .collect(Collectors.toList());
     }
 

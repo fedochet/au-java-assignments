@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -43,31 +44,34 @@ public class CommitRepository {
     }
 
     public Commit createCommit(String fileTreeHash, String message, @Nullable String parentHash) throws IOException {
-        String hash = hashCommit(fileTreeHash, message, parentHash);
+        Instant currentTime = Instant.now();
+
+        String hash = hashCommit(fileTreeHash, currentTime, message, parentHash);
         if (exists(hash)) {
             throw new IllegalArgumentException("Commit with such " + hash + " already exists!");
         }
 
         Path treeFile = Files.createFile(root.resolve(hash));
 
-        try (InputStream inputStream = withMarker(encodeCommit(fileTreeHash, message, parentHash))) {
+        try (InputStream inputStream = withMarker(encodeCommit(fileTreeHash, currentTime, message, parentHash))) {
             Files.copy(inputStream, treeFile, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        return new Commit(hash, fileTreeHash, message, parentHash);
+        return new Commit(hash, fileTreeHash, message, parentHash, currentTime);
     }
 
-    public String hashCommit(String fileTreeHash, String message, @Nullable String parentHash) throws IOException {
-        try (InputStream inputStream = withMarker(encodeCommit(fileTreeHash, message, parentHash))) {
+    public String hashCommit(String fileTreeHash, Instant commitTime, String message, @Nullable String parentHash) throws IOException {
+        try (InputStream inputStream = withMarker(encodeCommit(fileTreeHash, commitTime, message, parentHash))) {
             return DigestUtils.sha1Hex(inputStream);
         }
     }
 
-    private InputStream encodeCommit(String fileTreeHash, String message, @Nullable String parentHash) {
+    private InputStream encodeCommit(String fileTreeHash, Instant commitTime, String message, @Nullable String parentHash) {
         String encoded = String.join(
             System.getProperty("line.separator"),
             String.format("tree %s", fileTreeHash),
             parentHash != null ? String.format("parent %s", parentHash) : "",
+            commitTime.toString(),
             message
         );
 
@@ -87,9 +91,12 @@ public class CommitRepository {
         String treeLine = strings.get(0);
         String treeHash = treeLine.split(" ")[1];
         String parentLine = strings.get(1);
-        String parentHash = parentLine.isEmpty() ? null : parentLine.split(" ")[1];
-        String message = strings.stream().skip(2).collect(Collectors.joining(System.getProperty("line.separator")));
+        String commitTimeLine = strings.get(2);
 
-        return new Commit(hash, treeHash, message, parentHash);
+        String parentHash = parentLine.isEmpty() ? null : parentLine.split(" ")[1];
+        String message = strings.stream().skip(3).collect(Collectors.joining(System.getProperty("line.separator")));
+        Instant commitTime = Instant.parse(commitTimeLine);
+
+        return new Commit(hash, treeHash, message, parentHash, commitTime);
     }
 }

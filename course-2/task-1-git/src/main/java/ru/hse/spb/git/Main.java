@@ -8,6 +8,8 @@ import ru.hse.spb.git.status.Status;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +29,9 @@ class GitInit {
 
 @Command(name = "log")
 class GitLog implements Invokable {
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
+
     @Parameters(index = "0", arity = "0..1", description = "from commit")
     private String hash;
 
@@ -44,6 +49,7 @@ class GitLog implements Invokable {
         } else {
             for (CommitInfo commitInfo : log) {
                 System.out.printf("commit %s\n", commitInfo.getHash());
+                System.out.printf("Date: %s\n", DATE_TIME_FORMATTER.format(commitInfo.getTimestamp()));
                 System.out.println();
                 System.out.printf("%s\n", commitInfo.getMessage());
             }
