@@ -9,12 +9,13 @@ import org.junit.rules.TemporaryFolder;
 import ru.hse.spb.git.commit.CommitInfo;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class RepositoryManagerTest {
 
@@ -214,6 +215,78 @@ public class RepositoryManagerTest {
         repository.checkoutToCommit(hashOne);
 
         assertThat(repository.getMasterHeadCommit()).contains(hashTwo);
+    }
+
+    @Test
+    public void checkout_file_do_nothing_if_file_is_unchanged() throws IOException {
+        Path newFile = createFile("new_file", "file1");
+        repository.addFile(newFile);
+        repository.commit("commit 1");
+
+        repository.checkoutFile(newFile);
+
+        assertThat(newFile).hasContent("file1");
+    }
+
+    @Test
+    public void checkout_file_restores_committed_file_if_file_is_changed() throws IOException {
+        Path newFile = createFile("new_file", "file1");
+        repository.addFile(newFile);
+        repository.commit("commit 1");
+        FileUtils.write(newFile.toFile(), "file1 changed", StandardCharsets.UTF_8);
+
+        repository.checkoutFile(newFile);
+
+        assertThat(newFile).hasContent("file1");
+    }
+
+    @Test
+    public void checkout_file_restores_committed_file_if_file_is_deleted() throws IOException {
+        Path newFile = createFile("new_file", "file1");
+        repository.addFile(newFile);
+        repository.commit("commit 1");
+        Files.delete(newFile);
+
+        repository.checkoutFile(newFile);
+
+        assertThat(newFile).hasContent("file1");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void checkouting_not_committed_file_throws_exception() throws IOException {
+        repository.checkoutFile(createFile("file_1", "file1"));
+    }
+
+    @Test
+    public void checkouting_file_restores_staged_file_if_file_is_changed() throws IOException {
+        Path newFile = createFile("new_file", "file1");
+        repository.addFile(newFile);
+        FileUtils.write(newFile.toFile(), "file1 changed", StandardCharsets.UTF_8);
+
+        repository.checkoutFile(newFile);
+
+        assertThat(newFile).hasContent("file1");
+    }
+
+    @Test
+    public void checkouting_file_restores_staged_file_if_file_is_deleted() throws IOException {
+        Path newFile = createFile("new_file", "file1");
+        repository.addFile(newFile);
+        Files.delete(newFile);
+
+        repository.checkoutFile(newFile);
+
+        assertThat(newFile).hasContent("file1");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void deleted_file_cannot_be_checkouted() throws IOException {
+        Path newFile = createFile("new_file", "file1");
+        repository.addFile(newFile);
+        repository.commit("commit 1");
+        repository.remove(newFile);
+
+        repository.checkoutFile(newFile);
     }
 
     private Path createFile(Path file, String content) throws IOException {

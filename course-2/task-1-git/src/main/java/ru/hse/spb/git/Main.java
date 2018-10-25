@@ -149,7 +149,7 @@ class GitCheckout implements RepositoryAction {
         }
 
         if (filesToCheckout != null) {
-            repository.checkoutFile(filesToCheckout);
+            repository.checkoutFile(filesToCheckout.toAbsolutePath());
         } else if (hash.equals("master")) {
             String masterHead = repository.getMasterHeadCommit().orElseThrow(() ->
                 new IllegalArgumentException("Cannot checkout to master, because there are no commits in it.")

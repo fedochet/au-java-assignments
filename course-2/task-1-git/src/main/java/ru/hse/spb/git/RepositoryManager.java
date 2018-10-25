@@ -166,6 +166,16 @@ public class RepositoryManager {
         updateHead(getExistingCommit(hash));
     }
 
+    public void checkoutFile(Path filesToCheckout) throws IOException {
+        FileReference indexVersion = indexManager.get(filesToCheckout).orElseThrow(() ->
+            new IllegalArgumentException("This file " + filesToCheckout + " is not current index")
+        );
+
+        try (InputStream inputStream = getExistingBlob(indexVersion.getHash())) {
+            FileUtils.copyToFile(inputStream, filesToCheckout.toFile());
+        }
+    }
+
     public Optional<String> getMasterHeadCommit() throws IOException {
         String hash = FileUtils.readFileToString(masterHead.toFile(), "UTF-8");
 
@@ -216,7 +226,6 @@ public class RepositoryManager {
                 statusBuilder.withMissingFiles(fullPath);
             }
         }
-
     }
 
     private void fillStatusInDir(StatusBuilder statusBuilder, Path folder) throws IOException {
@@ -416,9 +425,5 @@ public class RepositoryManager {
                 }
             }
         }
-    }
-
-    public void checkoutFile(Path filesToCheckout) {
-        throw new IllegalArgumentException("Not implemented yet");
     }
 }
