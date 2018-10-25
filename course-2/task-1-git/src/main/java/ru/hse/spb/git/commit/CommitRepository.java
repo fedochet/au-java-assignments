@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
+import ru.hse.spb.git.CollectionUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,9 +15,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Optional;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.joining;
 
 @AllArgsConstructor
 public class CommitRepository {
@@ -86,15 +88,15 @@ public class CommitRepository {
     }
 
     private Commit decodeCommit(String hash, InputStream encodedCommit) throws IOException {
-        List<String> strings = IOUtils.readLines(encodedCommit, ENCODING);
+        Iterator<String> iterator = IOUtils.readLines(encodedCommit, ENCODING).iterator();
 
-        String treeLine = strings.get(0);
+        String treeLine = iterator.next();
         String treeHash = treeLine.split(" ")[1];
-        String parentLine = strings.get(1);
-        String commitTimeLine = strings.get(2);
+        String parentLine = iterator.next();
+        String commitTimeLine = iterator.next();
 
         String parentHash = parentLine.isEmpty() ? null : parentLine.split(" ")[1];
-        String message = strings.stream().skip(3).collect(Collectors.joining(System.getProperty("line.separator")));
+        String message = CollectionUtils.toStream(iterator).collect(joining(System.getProperty("line.separator")));
         Instant commitTime = Instant.parse(commitTimeLine);
 
         return new Commit(hash, treeHash, message, parentHash, commitTime);

@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import static picocli.CommandLine.Command;
 import static picocli.CommandLine.Parameters;
 
-interface Invokable {
+interface RepositoryAction {
     void invoke(@NotNull RepositoryManager manager) throws IOException;
 }
 
@@ -28,7 +28,7 @@ class GitInit {
 }
 
 @Command(name = "log")
-class GitLog implements Invokable {
+class GitLog implements RepositoryAction {
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
 
@@ -37,8 +37,7 @@ class GitLog implements Invokable {
 
     @Override
     public void invoke(@NotNull RepositoryManager repository) throws IOException {
-        GitLog logCommand = this;
-        List<CommitInfo> log = logCommand.hash != null ? repository.getLog(logCommand.hash) : repository.getLog();
+        List<CommitInfo> log = hash != null ? repository.getLog(hash) : repository.getLog();
 
         printCommitLog(log);
     }
@@ -59,7 +58,7 @@ class GitLog implements Invokable {
 }
 
 @Command(name = "status")
-class GitStatusCommand implements Invokable {
+class GitStatusCommand implements RepositoryAction {
     @Override
     public void invoke(@NotNull RepositoryManager repositoryManager) throws IOException {
         Status status = repositoryManager.getStatus();
@@ -98,13 +97,19 @@ class GitStatusCommand implements Invokable {
 }
 
 @Command(name = "add")
-class GitAdd {
+class GitAdd implements RepositoryAction {
     @Parameters(index = "0", paramLabel = "FILE")
-    Path file;
+    private Path file;
+
+
+    @Override
+    public void invoke(@NotNull RepositoryManager manager) throws IOException {
+        manager.addFile(file.toAbsolutePath());
+    }
 }
 
 @Command(name = "rm")
-class GitRm implements Invokable {
+class GitRm implements RepositoryAction {
     @Parameters(index = "0", paramLabel = "FILE")
     private Path file;
 
@@ -115,7 +120,7 @@ class GitRm implements Invokable {
 }
 
 @Command(name = "commit")
-class GitCommit implements Invokable {
+class GitCommit implements RepositoryAction {
     @Parameters(index = "0", paramLabel = "MESSAGE")
     private String message;
 
@@ -127,7 +132,7 @@ class GitCommit implements Invokable {
 
 //TODO add option for `-- file` syntax
 @Command(name = "checkout")
-class GitCheckout implements Invokable {
+class GitCheckout implements RepositoryAction {
     @Parameters(index = "0", paramLabel = "HASH")
     private String hash;
 
@@ -145,9 +150,14 @@ class GitCheckout implements Invokable {
 }
 
 @Command(name = "reset")
-class GitReset {
+class GitReset implements RepositoryAction {
     @Parameters(index = "0", paramLabel = "HASH")
-    String hash;
+    private String hash;
+
+    @Override
+    public void invoke(@NotNull RepositoryManager manager) throws IOException {
+        manager.hardResetTo(hash);
+    }
 }
 
 @Command(subcommands = {
@@ -177,7 +187,6 @@ public class Main {
     }
 
     private static void executeGitCommand(CommandLine commandLine, Path repositoryDir) throws IOException {
-
         if (commandLine.getCommand() instanceof GitInit) {
             RepositoryManager.init(repositoryDir);
             System.out.println("Repository is initialized in " + repositoryDir);
@@ -192,20 +201,7 @@ public class Main {
         }
 
         RepositoryManager repository = possibleRepository.get();
-
-        if (commandLine.getCommand() instanceof GitAdd) {
-            GitAdd gitAdd = commandLine.getCommand();
-            repository.addFile(gitAdd.file.toAbsolutePath());
-            return;
-        }
-
-        if (commandLine.getCommand() instanceof GitReset) {
-            GitReset reset = commandLine.getCommand();
-            repository.hardResetTo(reset.hash);
-            return;
-        }
-
-        Invokable command = commandLine.getCommand();
+        RepositoryAction command = commandLine.getCommand();
         command.invoke(repository);
     }
 
