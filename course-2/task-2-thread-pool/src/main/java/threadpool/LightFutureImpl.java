@@ -8,8 +8,8 @@ class LightFutureImpl<T> implements LightFuture<T> {
     private volatile boolean isReady = false;
 
     private boolean isSuccessful = false;
-    private T result = null;
-    private Throwable error = null;
+    private T result;
+    private Throwable error;
 
     @Override
     public boolean isReady() {
@@ -21,15 +21,11 @@ class LightFutureImpl<T> implements LightFuture<T> {
      * they were assigned before isReady was set.
      */
     @Override
-    public T get() throws LightExecutionException {
+    public T get() throws InterruptedException, LightExecutionException {
         if (!isReady) {
             synchronized (lock) {
                 while (!isReady) { // spurious wakeup
-                    try {
-                        lock.wait();
-                    } catch (InterruptedException e) {
-                        finishWithError(e);
-                    }
+                    lock.wait();
                 }
             }
         }
@@ -48,7 +44,7 @@ class LightFutureImpl<T> implements LightFuture<T> {
 
     /**
      * isReady is assigned after setting other fields to allow HB in {@link LightFutureImpl#get()}.
-     *
+     * <p>
      * Locking is required to prevent accidentally finishing future twice (might be removed because
      * in current code it might never happen).
      */

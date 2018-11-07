@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 public class ThreadPoolImpl implements ThreadPool {
 
     private final Thread[] threads;
-    private final ThreadWorker threadWorker = new ThreadWorker();
+    private final BlockingQueue<Runnable> queue = new BlockingQueue<>();
 
     public static ThreadPoolImpl create(int threadsNumber) {
         ThreadPoolImpl threadPool = new ThreadPoolImpl(threadsNumber);
@@ -15,7 +15,13 @@ public class ThreadPoolImpl implements ThreadPool {
     }
 
     private ThreadPoolImpl(int threadsNumber) {
+        if (threadsNumber <= 0) {
+            throw new IllegalArgumentException("Threads number must be positive, got " + threadsNumber);
+        }
+
         threads = new Thread[threadsNumber];
+        ThreadWorker threadWorker = new ThreadWorker(queue);
+
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(threadWorker);
         }
@@ -31,7 +37,7 @@ public class ThreadPoolImpl implements ThreadPool {
     public <T> LightFuture<T> submit(Supplier<? extends T> task) {
         LightFutureImpl<T> result = new LightFutureImpl<>();
 
-        threadWorker.addTask(() -> {
+        queue.add(() -> {
             try {
                 result.finishWithResult(task.get());
             } catch (Throwable e) {
