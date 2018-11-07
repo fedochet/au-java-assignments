@@ -6,6 +6,7 @@ public class ThreadPoolImpl implements ThreadPool {
 
     private final Thread[] threads;
     private final BlockingQueue<Runnable> queue = new BlockingQueue<>();
+    private final ThreadWorker threadWorker = new ThreadWorker(queue);
 
     public static ThreadPoolImpl create(int threadsNumber) {
         ThreadPoolImpl threadPool = new ThreadPoolImpl(threadsNumber);
@@ -20,7 +21,6 @@ public class ThreadPoolImpl implements ThreadPool {
         }
 
         threads = new Thread[threadsNumber];
-        ThreadWorker threadWorker = new ThreadWorker(queue);
 
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(threadWorker);
@@ -48,8 +48,17 @@ public class ThreadPoolImpl implements ThreadPool {
         return result;
     }
 
+    /**
+     * We shut down thread pool by stopping worker, interrupting all threads, and then
+     * joining them all, ignoring any {@link InterruptedException}.
+     *
+     * We have to call {@link ThreadWorker#stop()} before interrupting threads, because
+     * only that way we will see {@link ThreadWorker#isStopped} flag set to true inside of worker loop.
+     */
     @Override
     public void shutdown() {
+        threadWorker.stop();
+
         for (Thread thread : threads) {
             thread.interrupt();
         }
