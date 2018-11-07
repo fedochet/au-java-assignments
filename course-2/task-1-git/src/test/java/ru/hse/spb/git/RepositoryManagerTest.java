@@ -289,6 +289,28 @@ public class RepositoryManagerTest {
         repository.checkoutFile(newFile);
     }
 
+    @Test
+    public void head_is_pointing_to_master_after_checkouting_to_master_head() throws IOException {
+        Path newFileOne = createFile("new_file_1", "file1");
+        Path newFileTwo = createFile("new_file_2", "file2");
+        Path newFileThree = createFile("new_file_3", "file3");
+
+        repository.addFile(newFileOne);
+        String hashOne = repository.commit("commit 1");
+        repository.addFile(newFileTwo);
+        String hashTwo = repository.commit("commit 2");
+
+        repository.checkoutToCommit(hashOne);
+        repository.checkoutToCommit(hashTwo);
+
+        repository.addFile(newFileThree);
+        String hashThree = repository.commit("commit 3");
+
+        assertThat(repository.getHeadCommit()).contains(hashThree);
+        assertThat(repository.getMasterHeadCommit()).contains(hashThree);
+        assertThat(repository.getLog()).hasSize(3);
+    }
+
     private Path createFile(Path file, String content) throws IOException {
         Path newFile = tempFolder.getRoot().toPath().resolve(file);
         Files.createDirectories(newFile.getParent());

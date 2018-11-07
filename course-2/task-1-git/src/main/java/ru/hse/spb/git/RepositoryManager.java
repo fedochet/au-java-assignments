@@ -163,7 +163,11 @@ public class RepositoryManager {
         removeTreeInRoot(currentFileTree);
         restoreTreeInRoot(targetFileTree);
 
-        updateHead(getExistingCommit(hash));
+        if (getMasterHeadCommit().equals(Optional.of(hash))) {
+            pointHeadToMaster();
+        } else {
+            updateHead(getExistingCommit(hash));
+        }
     }
 
     public void checkoutFile(Path filesToCheckout) throws IOException {
