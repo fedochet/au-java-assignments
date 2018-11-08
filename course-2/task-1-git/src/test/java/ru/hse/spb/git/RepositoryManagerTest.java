@@ -1,11 +1,8 @@
 package ru.hse.spb.git;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import ru.hse.spb.git.commit.CommitInfo;
 
 import java.io.IOException;
@@ -17,10 +14,8 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RepositoryManagerTest {
+public class RepositoryManagerTest extends TempDirectoryTestBase {
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
     private RepositoryManager repository;
 
     @Before
@@ -311,18 +306,4 @@ public class RepositoryManagerTest {
         assertThat(repository.getLog()).hasSize(3);
     }
 
-    private Path createFile(Path file, String content) throws IOException {
-        Path newFile = tempFolder.getRoot().toPath().resolve(file);
-        Files.createDirectories(newFile.getParent());
-        IOUtils.write(content, Files.newOutputStream(newFile), "UTF-8");
-
-        return newFile;
-    }
-
-    private Path createFile(String name, String content) throws IOException {
-        Path file = tempFolder.newFile(name).toPath();
-        FileUtils.write(file.toFile(), content, "UTF-8");
-
-        return file;
-    }
 }

@@ -1,13 +1,10 @@
 package ru.hse.spb.git;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import ru.hse.spb.git.index.FileReference;
 import ru.hse.spb.git.status.StatusBuilder;
 
@@ -17,11 +14,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class RepositoryManagerComplexTest {
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+public class RepositoryManagerComplexTest extends TempDirectoryTestBase {
     private RepositoryManager repository;
 
     @Before
@@ -332,21 +327,6 @@ public class RepositoryManagerComplexTest {
         assertThat(f3).hasContent("file3");
         assertThat(repository.getHeadCommit()).contains(commit3);
         assertThat(repository.getMasterHeadCommit()).contains(commit3);
-    }
-
-    private Path createFile(Path file, String content) throws IOException {
-        Path newFile = tempFolder.getRoot().toPath().resolve(file);
-        Files.createDirectories(newFile.getParent());
-        IOUtils.write(content, Files.newOutputStream(newFile), "UTF-8");
-
-        return newFile;
-    }
-
-    private Path createFile(String name, String content) throws IOException {
-        Path file = tempFolder.newFile(name).toPath();
-        FileUtils.write(file.toFile(), content, "UTF-8");
-
-        return file;
     }
 
     @NotNull
