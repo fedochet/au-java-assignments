@@ -5,6 +5,7 @@ import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 import ru.hse.spb.git.blob.FileBlobRepository;
+import ru.hse.spb.git.branch.BranchManager;
 import ru.hse.spb.git.commit.Commit;
 import ru.hse.spb.git.commit.CommitInfo;
 import ru.hse.spb.git.commit.CommitRepository;
@@ -37,13 +38,15 @@ public class RepositoryManager {
     private final Path metadataDir;
     private final Path objectsDir;
     private final Path head;
+    private final Path masterHead;
+    private final Path index;
+    private final Path heads;
 
     private final FileBlobRepository blobRepository;
     private final FileTreeRepository fileTreeRepository;
     private final CommitRepository commitRepository;
     private final IndexManager indexManager;
-    private final Path masterHead;
-    private final Path index;
+    private final BranchManager branchManager;
 
     private RepositoryManager(Path repositoryRoot) {
         this.repositoryRoot = repositoryRoot;
@@ -51,17 +54,23 @@ public class RepositoryManager {
         objectsDir = metadataDir.resolve("objects");
         head = metadataDir.resolve("HEAD");
         masterHead = metadataDir.resolve("masterHEAD");
+
         index = metadataDir.resolve("index");
+        heads = metadataDir.resolve("heads");
 
         blobRepository = new FileBlobRepository(objectsDir);
         fileTreeRepository = new FileTreeRepository(objectsDir);
         commitRepository = new CommitRepository(objectsDir);
+
         indexManager = new IndexManager(repositoryRoot, index);
+        branchManager = new BranchManager(head);
     }
 
     public static RepositoryManager init(Path repositoryRoot) throws IOException {
         Path metadataDir = Files.createDirectories(repositoryRoot.resolve(".mygit"));
         Files.createDirectories(metadataDir.resolve("objects"));
+        Files.createDirectories(metadataDir.resolve("heads"));
+
         Path head = metadataDir.resolve("HEAD");
         if (!Files.exists(head)) {
             FileUtils.write(head.toFile(), "master", ENCODING);
@@ -86,8 +95,11 @@ public class RepositoryManager {
         Path head = metadataDir.resolve("HEAD");
         Path masterHead = metadataDir.resolve("masterHEAD");
         Path index = metadataDir.resolve("index");
+        Path heads = metadataDir.resolve("heads");
 
-        if (Stream.of(metadataDir, objectsDir, head, masterHead, index).allMatch(Files::exists)) {
+        Path[] files = {metadataDir, objectsDir, head, masterHead, index, heads};
+
+        if (Stream.of(files).allMatch(Files::exists)) {
             return Optional.of(new RepositoryManager(repositoryRoot));
         }
 
@@ -103,7 +115,11 @@ public class RepositoryManager {
     @NotNull
     public String commit(@NotNull String commitMessage) throws IOException {
         String treeHash = buildRootTree();
-        Commit commit = commitRepository.createCommit(treeHash, commitMessage, getHeadCommit().orElse(null));
+        Commit commit = commitRepository.createCommit(
+            treeHash,
+            commitMessage,
+            getHeadCommit().orElse(null)
+        );
 
         if (onTipOfMaster()) {
             updateMasterHead(commit);
@@ -197,6 +213,11 @@ public class RepositoryManager {
         StatusBuilder statusBuilder = new StatusBuilder();
         fillStatusInDir(statusBuilder, repositoryRoot);
         gatherRemovedFiles(statusBuilder);
+
+        if (getHeadCommit().equals(getMasterHeadCommit())) {
+            statusBuilder.onBranch("master");
+        }
+        getHeadCommit().ifPresent(statusBuilder::onCommit);
 
         return statusBuilder;
     }

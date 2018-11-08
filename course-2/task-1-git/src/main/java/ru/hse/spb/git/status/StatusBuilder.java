@@ -1,6 +1,7 @@
 package ru.hse.spb.git.status;
 
 import lombok.Data;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -9,12 +10,24 @@ import java.util.Set;
 
 @Data
 public final class StatusBuilder implements Status {
+    private String branch;
+    private String commit;
     private final Set<Path> notTrackedFiles = new HashSet<>();
     private final Set<Path> committedFiles = new HashSet<>();
     private final Set<Path> stagedFiles = new HashSet<>();
     private final Set<Path> notStagedFiles = new HashSet<>();
     private final Set<Path> deletedFiles = new HashSet<>();
     private final Set<Path> missingFiles = new HashSet<>();
+
+    public StatusBuilder onBranch(@NotNull String branch) {
+        this.branch = branch;
+        return this;
+    }
+
+    public StatusBuilder onCommit(@NotNull String commit) {
+        this.commit = commit;
+        return this;
+    }
 
     public StatusBuilder withCommittedFiles(Path... paths) {
         Collections.addAll(committedFiles, paths);

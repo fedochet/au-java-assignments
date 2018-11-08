@@ -2,6 +2,7 @@ package ru.hse.spb.git;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,7 +29,7 @@ public class RepositoryManagerStatusTest {
 
     @Test
     public void status_of_empty_repository_is_empty() throws IOException {
-        assertThat(repository.getStatus()).isEqualTo(new StatusBuilder());
+        assertThat(repository.getStatus()).isEqualTo(onMaster());
     }
 
     @Test
@@ -38,7 +39,7 @@ public class RepositoryManagerStatusTest {
         Path newFileThree = createFile(Paths.get("dir2", "dir3", "new_file_3"), "file3");
 
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMaster()
                 .withNotTrackedFiles(newFileOne)
                 .withNotTrackedFiles(newFileTwo)
                 .withNotTrackedFiles(newFileThree)
@@ -51,14 +52,14 @@ public class RepositoryManagerStatusTest {
 
         repository.addFile(newFileOne);
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withStagedFiles(newFileOne)
+            onMaster().withStagedFiles(newFileOne)
         );
 
         Path newFileTwo = createFile("new_file_2", "");
 
         repository.addFile(newFileTwo);
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMaster()
                 .withStagedFiles(newFileOne)
                 .withStagedFiles(newFileTwo)
         );
@@ -69,10 +70,10 @@ public class RepositoryManagerStatusTest {
         Path newFile = createFile("new_file", "");
 
         repository.addFile(newFile);
-        repository.commit("first commit");
+        String commit1 = repository.commit("first commit");
 
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withCommittedFiles(newFile)
+            onMasterCommit(commit1).withCommittedFiles(newFile)
         );
     }
 
@@ -80,12 +81,12 @@ public class RepositoryManagerStatusTest {
     public void committed_but_changed_file_can_be_seen_in_not_staged_files() throws IOException {
         Path newFile = createFile("new_file", "");
         repository.addFile(newFile);
-        repository.commit("first commit");
+        String commit1 = repository.commit("first commit");
 
         FileUtils.write(newFile.toFile(), "content", UTF_8);
 
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withNotStagedFiles(newFile)
+            onMasterCommit(commit1).withNotStagedFiles(newFile)
         );
     }
 
@@ -93,13 +94,12 @@ public class RepositoryManagerStatusTest {
     public void committed_but_deleted_file_can_be_seen_in_missing_files() throws IOException {
         Path newFile = createFile("new_file", "");
         repository.addFile(newFile);
-        repository.commit("first commit");
+        String commit1 = repository.commit("first commit");
 
         Files.delete(newFile);
 
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
-                .withMissingFiles(newFile)
+            onMasterCommit(commit1).withMissingFiles(newFile)
         );
     }
 
@@ -107,13 +107,12 @@ public class RepositoryManagerStatusTest {
     public void removed_with_repository_files_can_be_seen_in_deleted_files() throws IOException {
         Path newFile = createFile("new_file", "");
         repository.addFile(newFile);
-        repository.commit("first commit");
+        String commit1 = repository.commit("first commit");
 
         repository.remove(newFile);
 
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
-                .withDeletedFiles(newFile)
+            onMasterCommit(commit1).withDeletedFiles(newFile)
         );
     }
 
@@ -121,14 +120,13 @@ public class RepositoryManagerStatusTest {
     public void deleted_and_then_removed_with_repository_file_is_in_deleted_files() throws IOException {
         Path newFile = createFile("new_file", "");
         repository.addFile(newFile);
-        repository.commit("first commit");
+        String commit1 = repository.commit("first commit");
 
         Files.delete(newFile);
         repository.remove(newFile);
 
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
-                .withDeletedFiles(newFile)
+            onMasterCommit(commit1).withDeletedFiles(newFile)
         );
     }
 
@@ -147,4 +145,15 @@ public class RepositoryManagerStatusTest {
 
         return file;
     }
+
+    @NotNull
+    private StatusBuilder onMasterCommit(String commit1) {
+        return onMaster().onCommit(commit1);
+    }
+
+    @NotNull
+    private StatusBuilder onMaster() {
+        return new StatusBuilder().onBranch("master");
+    }
+
 }

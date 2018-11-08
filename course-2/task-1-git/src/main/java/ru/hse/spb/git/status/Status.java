@@ -1,11 +1,26 @@
 package ru.hse.spb.git.status;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Set;
 
 public interface Status {
+
+    /**
+     * Current branch, can be null if repository in deattached state.
+     * Should be 'master' on start.
+     */
+    @Nullable
+    String getBranch();
+
+    /**
+     * Current commit, can be null if repository is just initialized.
+     */
+    @Nullable
+    String getCommit();
+
     /**
      * New files.
      */

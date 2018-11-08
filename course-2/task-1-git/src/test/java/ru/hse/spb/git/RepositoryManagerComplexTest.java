@@ -2,6 +2,7 @@ package ru.hse.spb.git;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -42,7 +43,7 @@ public class RepositoryManagerComplexTest {
 
         assertThat(repository.getCurrentIndex()).isEmpty();
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMaster()
                 .withNotTrackedFiles(f1, f2, f3)
         );
 
@@ -51,7 +52,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash1, relativeF1)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMaster()
                 .withStagedFiles(f1)
                 .withNotTrackedFiles(f2, f3)
         );
@@ -61,7 +62,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash1, relativeF1)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit1)
                 .withCommittedFiles(f1)
                 .withNotTrackedFiles(f2, f3)
         );
@@ -72,7 +73,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash2, relativeF2)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit1)
                 .withCommittedFiles(f1)
                 .withStagedFiles(f2)
                 .withNotTrackedFiles(f3)
@@ -84,7 +85,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash2, relativeF2)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit2)
                 .withCommittedFiles(f1, f2)
                 .withNotTrackedFiles(f3)
         );
@@ -96,7 +97,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit2)
                 .withCommittedFiles(f1, f2)
                 .withStagedFiles(f3)
         );
@@ -108,7 +109,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit3)
                 .withCommittedFiles(f1, f2, f3)
         );
 
@@ -119,7 +120,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit3)
                 .withNotStagedFiles(f1)
                 .withCommittedFiles(f2, f3)
         );
@@ -131,7 +132,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit3)
                 .withStagedFiles(f1)
                 .withCommittedFiles(f2, f3)
         );
@@ -143,7 +144,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit4)
                 .withCommittedFiles(f1, f2, f3)
         );
 
@@ -152,7 +153,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash1, relativeF1)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onCommit(commit1)
                 .withCommittedFiles(f1)
         );
         assertThat(f1).hasContent("f1 initial");
@@ -165,7 +166,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash2, relativeF2)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onCommit(commit2)
                 .withCommittedFiles(f1, f2)
         );
         assertThat(f1).hasContent("f1 initial");
@@ -179,7 +180,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onCommit(commit3)
                 .withCommittedFiles(f1, f2, f3)
         );
         assertThat(f1).hasContent("f1 initial");
@@ -193,7 +194,7 @@ public class RepositoryManagerComplexTest {
             FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit4)
                 .withCommittedFiles(f1, f2, f3)
         );
         assertThat(f1).hasContent("f1 changed");
@@ -211,24 +212,24 @@ public class RepositoryManagerComplexTest {
         repository.addFile(f2);
         repository.addFile(f3);
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withStagedFiles(f1, f2, f3)
+            onMaster().withStagedFiles(f1, f2, f3)
         );
 
-        repository.commit("commit 1");
+        String commit1 = repository.commit("commit 1");
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withCommittedFiles(f1, f2, f3)
+            onMasterCommit(commit1).withCommittedFiles(f1, f2, f3)
         );
 
         Files.delete(f1);
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit1)
                 .withMissingFiles(f1)
                 .withCommittedFiles(f2, f3)
         );
 
         Path f4 = createFile(Paths.get("f4"), "f4 initial");
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit1)
                 .withMissingFiles(f1)
                 .withCommittedFiles(f2, f3)
                 .withNotTrackedFiles(f4)
@@ -236,15 +237,15 @@ public class RepositoryManagerComplexTest {
 
         repository.addFile(f4);
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit1)
                 .withMissingFiles(f1)
                 .withCommittedFiles(f2, f3)
                 .withStagedFiles(f4)
         );
 
-        repository.commit("commit 2");
+        String commit2 = repository.commit("commit 2");
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit2)
                 .withMissingFiles(f1)
                 .withCommittedFiles(f2, f3, f4)
         );
@@ -272,67 +273,66 @@ public class RepositoryManagerComplexTest {
         Path f2 = createFile("new_file_2", "file2");
 
         repository.addFile(f1);
-        String hashOne = repository.commit("commit 1");
+        String commit1 = repository.commit("commit 1");
         repository.addFile(f2);
-        String hashTwo = repository.commit("commit 2");
+        String commit2 = repository.commit("commit 2");
 
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withCommittedFiles(f1, f2)
+            onMasterCommit(commit2).withCommittedFiles(f1, f2)
         );
 
-        repository.hardResetTo(hashOne);
+        repository.hardResetTo(commit1);
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withCommittedFiles(f1)
+            onMasterCommit(commit1).withCommittedFiles(f1)
         );
 
         assertThat(f1).hasContent("file1");
         assertThat(f2).doesNotExist();
-        assertThat(repository.getHeadCommit()).contains(hashOne);
-        assertThat(repository.getMasterHeadCommit()).contains(hashOne);
+        assertThat(repository.getHeadCommit()).contains(commit1);
+        assertThat(repository.getMasterHeadCommit()).contains(commit1);
 
         f2 = createFile("new_file_2", "file2");
         Path f3 = createFile("new_file_3", "file3");
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit1)
                 .withCommittedFiles(f1)
                 .withNotTrackedFiles(f2, f3)
         );
 
         repository.addFile(f3);
-        String hashThree = repository.commit("commit 3");
+        String commit3 = repository.commit("commit 3");
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder()
+            onMasterCommit(commit3)
                 .withCommittedFiles(f1, f3)
                 .withNotTrackedFiles(f2)
         );
 
         assertThat(f1).hasContent("file1");
         assertThat(f3).hasContent("file3");
-        assertThat(repository.getHeadCommit()).contains(hashThree);
-        assertThat(repository.getMasterHeadCommit()).contains(hashThree);
+        assertThat(repository.getHeadCommit()).contains(commit3);
+        assertThat(repository.getMasterHeadCommit()).contains(commit3);
 
         Files.delete(f2);
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withCommittedFiles(f1, f3)
+            onMasterCommit(commit3).withCommittedFiles(f1, f3)
         );
 
-        repository.checkoutToCommit(hashOne);
+        repository.checkoutToCommit(commit1);
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withCommittedFiles(f1)
+            onCommit(commit1).withCommittedFiles(f1)
         );
 
-        repository.checkoutToCommit(hashThree);
+        repository.checkoutToCommit(commit3);
         assertThat(repository.getStatus()).isEqualTo(
-            new StatusBuilder().withCommittedFiles(f1, f3)
+            onMasterCommit(commit3).withCommittedFiles(f1, f3)
         );
 
         assertThat(f1).hasContent("file1");
         assertThat(f2).doesNotExist();
         assertThat(f3).hasContent("file3");
-        assertThat(repository.getHeadCommit()).contains(hashThree);
-        assertThat(repository.getMasterHeadCommit()).contains(hashThree);
+        assertThat(repository.getHeadCommit()).contains(commit3);
+        assertThat(repository.getMasterHeadCommit()).contains(commit3);
     }
-
 
     private Path createFile(Path file, String content) throws IOException {
         Path newFile = tempFolder.getRoot().toPath().resolve(file);
@@ -348,4 +348,20 @@ public class RepositoryManagerComplexTest {
 
         return file;
     }
+
+    @NotNull
+    private StatusBuilder onMasterCommit(String commit3) {
+        return onMaster().onCommit(commit3);
+    }
+
+    @NotNull
+    private StatusBuilder onMaster() {
+        return new StatusBuilder().onBranch("master");
+    }
+
+    @NotNull
+    private StatusBuilder onCommit(String commit1) {
+        return new StatusBuilder().onCommit(commit1);
+    }
+
 }
