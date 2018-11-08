@@ -2,6 +2,8 @@ package threadpool;
 
 import java.util.function.Supplier;
 
+// TODO: 08.11.18 throw if tasks are submitted into shutdown pool
+// TODO: 08.11.18 make all classes public
 public class ThreadPoolImpl implements ThreadPool {
 
     private final Thread[] threads;
