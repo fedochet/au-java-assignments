@@ -1,6 +1,7 @@
 package ru.hse.spb.git.index;
 
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -23,20 +24,6 @@ public class IndexManager {
     public IndexManager(Path repositoryRoot, Path indexFile) {
         this.repositoryRoot = repositoryRoot;
         this.indexFile = indexFile;
-    }
-
-    public void updateIndex(List<FileReference> records) throws IOException {
-        List<String> serialized = records.stream()
-            .map(record -> String.format(
-                "%s %s",
-                record.getHash(),
-                String.join("/", record.getPathParts())
-            ))
-            .collect(Collectors.toList());
-
-        try (OutputStream fileOutputStream = Files.newOutputStream(indexFile)) {
-            IOUtils.writeLines(serialized, "\n", fileOutputStream, ENCODING);
-        }
     }
 
     public List<FileReference> getAllRecords() throws IOException {
@@ -66,11 +53,33 @@ public class IndexManager {
         updateIndex(fileReferences);
     }
 
+    private void updateIndex(List<FileReference> records) throws IOException {
+        List<String> serialized = records.stream()
+            .map(this::serializeReference)
+            .collect(Collectors.toList());
+
+        try (OutputStream fileOutputStream = Files.newOutputStream(indexFile)) {
+            IOUtils.writeLines(serialized, "\n", fileOutputStream, ENCODING);
+        }
+    }
+
     private Stream<FileReference> getIndexEntries() throws IOException {
-        return Files.lines(indexFile, ENCODING).map(line -> {
-            String[] splitted = line.split(" ", 2);
-            List<String> pathParts = Arrays.asList(splitted[1].split("/"));
-            return new FileReference(splitted[0], pathParts);
-        });
+        return Files.lines(indexFile, ENCODING).map(this::deserializeReference);
+    }
+
+    @NotNull
+    private String serializeReference(FileReference reference) {
+        return String.format(
+            "%s %s",
+            reference.getHash(),
+            String.join("/", reference.getPathParts())
+        );
+    }
+
+    @NotNull
+    private FileReference deserializeReference(String line) {
+        String[] splitted = line.split(" ", 2);
+        List<String> pathParts = Arrays.asList(splitted[1].split("/"));
+        return new FileReference(splitted[0], pathParts);
     }
 }
