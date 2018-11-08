@@ -189,7 +189,7 @@ public class RepositoryManagerComplexTest extends TempDirectoryTestBase {
             FileReference.fromPath(hash3, relativeF3)
         );
         assertThat(repository.getStatus()).isEqualTo(
-            onMasterCommit(commit4)
+            onCommit(commit4)
                 .withCommittedFiles(f1, f2, f3)
         );
         assertThat(f1).hasContent("f1 changed");
@@ -284,7 +284,6 @@ public class RepositoryManagerComplexTest extends TempDirectoryTestBase {
         assertThat(f1).hasContent("file1");
         assertThat(f2).doesNotExist();
         assertThat(repository.getHeadCommit()).contains(commit1);
-        assertThat(repository.getMasterHeadCommit()).contains(commit1);
 
         f2 = createFile("new_file_2", "file2");
         Path f3 = createFile("new_file_3", "file3");
@@ -305,7 +304,6 @@ public class RepositoryManagerComplexTest extends TempDirectoryTestBase {
         assertThat(f1).hasContent("file1");
         assertThat(f3).hasContent("file3");
         assertThat(repository.getHeadCommit()).contains(commit3);
-        assertThat(repository.getMasterHeadCommit()).contains(commit3);
 
         Files.delete(f2);
         assertThat(repository.getStatus()).isEqualTo(
@@ -319,14 +317,13 @@ public class RepositoryManagerComplexTest extends TempDirectoryTestBase {
 
         repository.checkoutToCommit(commit3);
         assertThat(repository.getStatus()).isEqualTo(
-            onMasterCommit(commit3).withCommittedFiles(f1, f3)
+            onCommit(commit3).withCommittedFiles(f1, f3)
         );
 
         assertThat(f1).hasContent("file1");
         assertThat(f2).doesNotExist();
         assertThat(f3).hasContent("file3");
         assertThat(repository.getHeadCommit()).contains(commit3);
-        assertThat(repository.getMasterHeadCommit()).contains(commit3);
     }
 
     @NotNull

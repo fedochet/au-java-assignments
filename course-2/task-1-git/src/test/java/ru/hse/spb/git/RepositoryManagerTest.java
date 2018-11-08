@@ -129,7 +129,6 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         String hashTwo = repository.commitFile(newFileTwo, "second commit");
 
         assertThat(hashOne).isNotEqualTo(hashTwo);
-        assertThat(repository.getMasterHeadCommit()).contains(hashTwo);
         assertThat(repository.getHeadCommit()).contains(hashTwo);
     }
 
@@ -181,7 +180,6 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         repository.hardResetTo(hashOne);
 
         assertThat(repository.getHeadCommit()).contains(hashOne);
-        assertThat(repository.getMasterHeadCommit()).contains(hashOne);
         assertThat(newFileOne).hasContent("file1");
         assertThat(newFileTwo).doesNotExist();
     }
@@ -208,8 +206,6 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         String hashTwo = repository.commitFile(newFileTwo, "commit 2");
 
         repository.checkoutToCommit(hashOne);
-
-        assertThat(repository.getMasterHeadCommit()).contains(hashTwo);
     }
 
     @Test
@@ -302,7 +298,6 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         String hashThree = repository.commit("commit 3");
 
         assertThat(repository.getHeadCommit()).contains(hashThree);
-        assertThat(repository.getMasterHeadCommit()).contains(hashThree);
         assertThat(repository.getLog()).hasSize(3);
     }
 

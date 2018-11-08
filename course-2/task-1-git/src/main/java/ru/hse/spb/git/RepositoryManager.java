@@ -5,6 +5,7 @@ import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 import ru.hse.spb.git.blob.FileBlobRepository;
+import ru.hse.spb.git.branch.Branch;
 import ru.hse.spb.git.branch.BranchManager;
 import ru.hse.spb.git.commit.Commit;
 import ru.hse.spb.git.commit.CommitInfo;
@@ -28,17 +29,18 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.*;
 import static ru.hse.spb.git.CollectionUtils.ioFunction;
 import static ru.hse.spb.git.CollectionUtils.ioPredicate;
 
 public class RepositoryManager {
-    private static final Charset ENCODING = StandardCharsets.UTF_8;
+    private static final Charset ENCODING = UTF_8;
+    public static final String INITIAL_MASTER_REFERENCE = "ref:master";
     @Getter
     private final Path repositoryRoot;
     private final Path metadataDir;
     private final Path objectsDir;
     private final Path head;
-    private final Path masterHead;
     private final Path index;
     private final Path heads;
 
@@ -53,7 +55,6 @@ public class RepositoryManager {
         metadataDir = repositoryRoot.resolve(".mygit");
         objectsDir = metadataDir.resolve("objects");
         head = metadataDir.resolve("HEAD");
-        masterHead = metadataDir.resolve("masterHEAD");
 
         index = metadataDir.resolve("index");
         heads = metadataDir.resolve("heads");
@@ -63,7 +64,7 @@ public class RepositoryManager {
         commitRepository = new CommitRepository(objectsDir);
 
         indexManager = new IndexManager(repositoryRoot, index);
-        branchManager = new BranchManager(head);
+        branchManager = new BranchManager(heads);
     }
 
     public static RepositoryManager init(Path repositoryRoot) throws IOException {
@@ -73,12 +74,7 @@ public class RepositoryManager {
 
         Path head = metadataDir.resolve("HEAD");
         if (!Files.exists(head)) {
-            FileUtils.write(head.toFile(), "master", ENCODING);
-        }
-
-        Path masterHead = metadataDir.resolve("masterHEAD");
-        if (!Files.exists(masterHead)) {
-            Files.createFile(masterHead);
+            FileUtils.write(head.toFile(), INITIAL_MASTER_REFERENCE, ENCODING);
         }
 
         Path index = metadataDir.resolve("index");
@@ -93,11 +89,10 @@ public class RepositoryManager {
         Path metadataDir = repositoryRoot.resolve(".mygit");
         Path objectsDir = metadataDir.resolve("objects");
         Path head = metadataDir.resolve("HEAD");
-        Path masterHead = metadataDir.resolve("masterHEAD");
         Path index = metadataDir.resolve("index");
         Path heads = metadataDir.resolve("heads");
 
-        Path[] files = {metadataDir, objectsDir, head, masterHead, index, heads};
+        Path[] files = {metadataDir, objectsDir, head, index, heads};
 
         if (Stream.of(files).allMatch(Files::exists)) {
             return Optional.of(new RepositoryManager(repositoryRoot));
@@ -121,8 +116,10 @@ public class RepositoryManager {
             getHeadCommit().orElse(null)
         );
 
-        if (onTipOfMaster()) {
-            updateMasterHead(commit);
+        if (!getHeadCommit().isPresent()) { // first commit ever
+            branchManager.createBranch("master", commit.getHash());
+        } else if (onTipOfBranch()) {
+            updateBranchHead(commit);
         } else {
             updateHead(commit);
         }
@@ -160,30 +157,20 @@ public class RepositoryManager {
     }
 
     public Optional<String> getHeadCommit() throws IOException {
-        String hash = FileUtils.readFileToString(head.toFile(), "UTF-8");
+        String hash = FileUtils.readFileToString(head.toFile(), ENCODING);
 
-        if (hash.equals("master")) {
-            return getMasterHeadCommit();
+        if (hash.startsWith("ref:")) {
+            return branchManager
+                .findBranch(hash.replaceFirst("ref:", ""))
+                .map(Branch::getHeadCommit);
         }
 
         return Optional.of(hash);
     }
 
     public void checkoutToCommit(String hash) throws IOException {
-        Commit currentCommit = getExistingCommit(getHeadCommit().get());
-        Commit targetCommit = getExistingCommit(hash);
-
-        FileTree currentFileTree = getExistingTree(currentCommit.getTreeHash());
-        FileTree targetFileTree = getExistingTree(targetCommit.getTreeHash());
-
-        removeTreeInRoot(currentFileTree);
-        restoreTreeInRoot(targetFileTree);
-
-        if (getMasterHeadCommit().equals(Optional.of(hash))) {
-            pointHeadToMaster();
-        } else {
-            updateHead(getExistingCommit(hash));
-        }
+        checkoutFilesToCommit(hash);
+        updateHead(getExistingCommit(hash));
     }
 
     public void checkoutFile(Path filesToCheckout) throws IOException {
@@ -196,16 +183,32 @@ public class RepositoryManager {
         }
     }
 
-    public Optional<String> getMasterHeadCommit() throws IOException {
-        String hash = FileUtils.readFileToString(masterHead.toFile(), "UTF-8");
+    public Branch createBranch(String name) throws IOException {
+        String parentCommitHash = getHeadCommit().orElseThrow(() ->
+            new IllegalArgumentException("Cannot create branch without any commit in repository!")
+        );
 
-        return Optional.of(hash).filter(s -> !s.isEmpty());
+        return branchManager.createBranch(name, parentCommitHash);
+    }
+
+    public void checkout(String name) throws IOException {
+        Branch branch = branchManager.findBranch(name).orElseThrow(() ->
+            new IllegalArgumentException(String.format("Branch %s does not exist", name))
+        );
+
+        pointHeadToBranch(branch);
+    }
+
+    @Deprecated
+    public Optional<String> getMasterHeadCommit() throws IOException {
+        return branchManager.findBranch("master").map(Branch::getHeadCommit);
     }
 
     public void hardResetTo(String hash) throws IOException {
-        checkoutToCommit(hash);
-        updateMasterHead(getExistingCommit(hash));
-        pointHeadToMaster();
+        if (onTipOfBranch()) {
+            checkoutFilesToCommit(hash);
+            updateBranchHead(getExistingCommit(hash));
+        }
     }
 
     @NotNull
@@ -214,9 +217,14 @@ public class RepositoryManager {
         fillStatusInDir(statusBuilder, repositoryRoot);
         gatherRemovedFiles(statusBuilder);
 
-        if (getHeadCommit().equals(getMasterHeadCommit())) {
+        if (!getHeadCommit().isPresent()) { // no commits yet
             statusBuilder.onBranch("master");
+        } else {
+            getHeadBranch()
+                .map(Branch::getName)
+                .ifPresent(statusBuilder::onBranch);
         }
+
         getHeadCommit().ifPresent(statusBuilder::onCommit);
 
         return statusBuilder;
@@ -229,6 +237,39 @@ public class RepositoryManager {
     @TestOnly
     public Set<FileReference> getCurrentIndex() throws IOException {
         return new HashSet<>(indexManager.getAllRecords());
+    }
+
+    private Optional<Branch> getHeadBranch() throws IOException {
+        String hash = FileUtils.readFileToString(head.toFile(), ENCODING);
+
+        if (hash.startsWith("ref:")) {
+            return branchManager.findBranch(hash.replaceFirst("ref:", ""));
+        }
+
+        return Optional.empty();
+    }
+
+    private boolean onTipOfBranch() throws IOException {
+        return getHeadBranch().isPresent();
+    }
+
+    private void updateBranchHead(Commit commit) throws IOException {
+        Branch branch = getHeadBranch().orElseThrow(() ->
+            new IllegalStateException("Cannot update branch head because head does not point anywhere!")
+        );
+
+        branchManager.updateBranch(branch.getName(), commit.getHash());
+    }
+
+    private void checkoutFilesToCommit(String hash) throws IOException {
+        Commit currentCommit = getExistingCommit(getHeadCommit().get());
+        Commit targetCommit = getExistingCommit(hash);
+
+        FileTree currentFileTree = getExistingTree(currentCommit.getTreeHash());
+        FileTree targetFileTree = getExistingTree(targetCommit.getTreeHash());
+
+        removeTreeInRoot(currentFileTree);
+        restoreTreeInRoot(targetFileTree);
     }
 
     private void gatherRemovedFiles(StatusBuilder statusBuilder) throws IOException {
@@ -313,10 +354,6 @@ public class RepositoryManager {
             .findFirst();
     }
 
-    private boolean onTipOfMaster() throws IOException {
-        return getHeadCommit().equals(getMasterHeadCommit());
-    }
-
     private void addFileToIndex(Path newFile) throws IOException {
         String hash = blobRepository.hashBlob(newFile);
         indexManager.set(newFile, hash);
@@ -325,20 +362,17 @@ public class RepositoryManager {
     private Stream<Commit> commitsFrom(String hash) throws IOException {
         return CollectionUtils.generateStream(
             commitRepository.getCommit(hash).orElse(null),
-            c -> c.getParentHash().map(ioFunction(this::getExistingCommit))
+            c -> c.getParentHash().map(ioFunction(this::getExistingCommit)).orElse(null)
         );
     }
 
     private void updateHead(Commit commit) throws IOException {
-        FileUtils.write(head.toFile(), commit.getHash(), "UTF-8");
+        FileUtils.write(head.toFile(), commit.getHash(), UTF_8);
     }
 
-    private void pointHeadToMaster() throws IOException {
-        FileUtils.write(head.toFile(), "master", "UTF-8");
-    }
-
-    private void updateMasterHead(Commit commit) throws IOException {
-        FileUtils.write(masterHead.toFile(), commit.getHash(), "UTF-8");
+    private void pointHeadToBranch(Branch branch) throws IOException {
+        String encodedRef = String.format("ref:%s", branch.getName());
+        Files.write(head, encodedRef.getBytes(UTF_8));
     }
 
     private String buildRootTree() throws IOException {

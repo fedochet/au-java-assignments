@@ -12,12 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
-@Data
-class Branch {
-    private final String name;
-    private final String headCommit;
-}
-
 public class BranchManager {
     private static final Charset ENCODING = StandardCharsets.UTF_8;
 
@@ -27,7 +21,7 @@ public class BranchManager {
         this.root = root;
     }
 
-    void createBranch(@NotNull String name, @NotNull String parentCommitHash) throws IOException {
+    public Branch createBranch(@NotNull String name, @NotNull String parentCommitHash) throws IOException {
         Path branchFile;
         try {
             branchFile = Files.createFile(root.resolve(name));
@@ -36,9 +30,11 @@ public class BranchManager {
         }
 
         Files.write(branchFile, parentCommitHash.getBytes(ENCODING));
+
+        return new Branch(name, parentCommitHash);
     }
 
-    Optional<Branch> findBranch(@NotNull String name) throws IOException {
+    public Optional<Branch> findBranch(@NotNull String name) throws IOException {
         Path branchFile = root.resolve(name);
         if (Files.exists(branchFile)) {
             String branchHeadCommit = FileUtils.readFileToString(branchFile.toFile(), ENCODING);
@@ -48,7 +44,7 @@ public class BranchManager {
         return Optional.empty();
     }
 
-    void updateBranch(@NotNull String name, @NotNull String headCommit) throws IOException {
+    public void updateBranch(@NotNull String name, @NotNull String headCommit) throws IOException {
         Path branchFile = root.resolve(name);
         if (Files.notExists(branchFile)) {
             throw new IllegalArgumentException(String.format("Branch %s does not exist.", name));

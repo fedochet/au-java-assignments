@@ -17,11 +17,11 @@ final public class CollectionUtils {
     private CollectionUtils() {
     }
 
-    public static <T> Stream<T> generateStream(T seed, Function<T, Optional<T>> next) {
+    public static <T> Stream<T> generateStream(T seed, Function<T, T> next) {
         return toStream(iterate(seed, next));
     }
 
-    private static <T> Iterator<T> iterate(@Nullable T seed, @NotNull Function<T, Optional<T>> next) {
+    private static <T> Iterator<T> iterate(@Nullable T seed, @NotNull Function<T, T> next) {
         return new Iterator<T>() {
             T current = seed;
 
@@ -33,7 +33,7 @@ final public class CollectionUtils {
             @Override
             public T next() {
                 T previous = this.current;
-                this.current = next.apply(previous).orElse(null);
+                this.current = next.apply(previous);
 
                 return previous;
             }
