@@ -71,7 +71,9 @@ class GitStatusCommand implements RepositoryAction {
         String notTrackedFiles = formatFiles(root, status.getNotTrackedFiles(), "");
 
         Arrays.asList(
-            "On branch master",
+            status.getBranch() == null
+                ? "In detached head state on " + status.getCommit()
+                : "On branch " + status.getBranch(),
             "Changes to be committed:",
             stagedFiles,
             deletedFiles,
