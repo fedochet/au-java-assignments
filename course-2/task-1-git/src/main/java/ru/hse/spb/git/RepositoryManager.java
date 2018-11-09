@@ -22,7 +22,6 @@ import ru.hse.spb.git.status.StatusBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -121,7 +120,7 @@ public class RepositoryManager {
         } else if (onTipOfBranch()) {
             updateBranchHead(commit);
         } else {
-            updateHead(commit);
+            updateHead(commit.getHash());
         }
 
         return commit.getHash();
@@ -168,11 +167,6 @@ public class RepositoryManager {
         return Optional.of(hash);
     }
 
-    public void checkoutToCommit(String hash) throws IOException {
-        checkoutFilesToCommit(hash);
-        updateHead(getExistingCommit(hash));
-    }
-
     public void checkoutFile(Path filesToCheckout) throws IOException {
         FileReference indexVersion = indexManager.get(filesToCheckout).orElseThrow(() ->
             new IllegalArgumentException("This file " + filesToCheckout + " is not current index")
@@ -192,11 +186,16 @@ public class RepositoryManager {
     }
 
     public void checkout(String name) throws IOException {
-        Branch branch = branchManager.findBranch(name).orElseThrow(() ->
-            new IllegalArgumentException(String.format("Branch %s does not exist", name))
-        );
+        Optional<Branch> branchToCheckout = branchManager.findBranch(name);
 
-        pointHeadToBranch(branch);
+        if (branchToCheckout.isPresent()) {
+            Branch branch = branchToCheckout.get();
+            checkoutFilesToCommit(branch.getHeadCommit());
+            pointHeadToBranch(branch.getName());
+        } else {
+            checkoutFilesToCommit(name);
+            updateHead(name);
+        }
     }
 
     @Deprecated
@@ -366,12 +365,12 @@ public class RepositoryManager {
         );
     }
 
-    private void updateHead(Commit commit) throws IOException {
-        FileUtils.write(head.toFile(), commit.getHash(), UTF_8);
+    private void updateHead(String hash) throws IOException {
+        FileUtils.write(head.toFile(), hash, UTF_8);
     }
 
-    private void pointHeadToBranch(Branch branch) throws IOException {
-        String encodedRef = String.format("ref:%s", branch.getName());
+    private void pointHeadToBranch(String name) throws IOException {
+        String encodedRef = String.format("ref:%s", name);
         Files.write(head, encodedRef.getBytes(UTF_8));
     }
 

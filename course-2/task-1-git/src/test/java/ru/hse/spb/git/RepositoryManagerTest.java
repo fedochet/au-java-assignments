@@ -77,7 +77,7 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
 
         String hash = repository.commitFile(newFile, "first commit");
         Files.delete(newFile);
-        repository.checkoutToCommit(hash);
+        repository.checkout(hash);
 
         assertThat(newFile).hasContent(newFileContent);
     }
@@ -90,7 +90,7 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         String hash = repository.commitFile(newFileOne, "first commit");
         Files.delete(newFileOne);
         Files.delete(newFileTwo);
-        repository.checkoutToCommit(hash);
+        repository.checkout(hash);
 
         assertThat(newFileTwo).doesNotExist();
     }
@@ -102,7 +102,7 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
 
         String hash = repository.commitFile(newFile, "first commit");
         FileUtils.deleteDirectory(newFile.getParent().toFile());
-        repository.checkoutToCommit(hash);
+        repository.checkout(hash);
 
         assertThat(newFile).hasContent(fileContent);
     }
@@ -115,7 +115,7 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         String hash = repository.commitFile(newFileOne, "first commit");
         Files.delete(newFileOne);
         Files.delete(newFileTwo);
-        repository.checkoutToCommit(hash);
+        repository.checkout(hash);
 
         assertThat(newFileTwo).doesNotExist();
     }
@@ -140,12 +140,12 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         String hashOne = repository.commitFile(newFileOne, "first commit");
         String hashTwo = repository.commitFile(newFileTwo, "second commit");
 
-        repository.checkoutToCommit(hashOne);
+        repository.checkout(hashOne);
 
         assertThat(newFileOne).hasContent("123");
         assertThat(newFileTwo).doesNotExist();
 
-        repository.checkoutToCommit(hashTwo);
+        repository.checkout(hashTwo);
 
         assertThat(newFileOne).hasContent("123");
         assertThat(newFileTwo).hasContent("123");
@@ -159,11 +159,11 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         String hashOne = repository.commitFile(newFileOne, "commit 1");
         String hashTwo = repository.commitFile(newFileTwo, "commit 2");
 
-        repository.checkoutToCommit(hashOne);
+        repository.checkout(hashOne);
         assertThat(newFileOne).hasContent("file1");
         assertThat(newFileTwo.getParent()).doesNotExist();
 
-        repository.checkoutToCommit(hashTwo);
+        repository.checkout(hashTwo);
         assertThat(newFileOne).hasContent("file1");
         assertThat(newFileTwo).hasContent("file2");
 
@@ -192,7 +192,7 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         String hashOne = repository.commitFile(newFileOne, "commit 1");
         repository.commitFile(newFileTwo, "commit 2");
 
-        repository.checkoutToCommit(hashOne);
+        repository.checkout(hashOne);
 
         assertThat(repository.getHeadCommit()).contains(hashOne);
     }
@@ -205,7 +205,7 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         String hashOne = repository.commitFile(newFileOne, "commit 1");
         String hashTwo = repository.commitFile(newFileTwo, "commit 2");
 
-        repository.checkoutToCommit(hashOne);
+        repository.checkout(hashOne);
     }
 
     @Test
@@ -291,8 +291,8 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         repository.addFile(newFileTwo);
         String hashTwo = repository.commit("commit 2");
 
-        repository.checkoutToCommit(hashOne);
-        repository.checkoutToCommit(hashTwo);
+        repository.checkout(hashOne);
+        repository.checkout(hashTwo);
 
         repository.addFile(newFileThree);
         String hashThree = repository.commit("commit 3");

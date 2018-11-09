@@ -87,4 +87,74 @@ public class RepositoryManagerBranchesTest extends TempDirectoryTestBase {
                 .withCommittedFiles(file1)
         );
     }
+
+    @Test
+    public void checkouting_back_and_forth_between_master_and_single_branch() throws IOException {
+        Path file1 = createFile("f1", "1");
+        repository.addFile(file1);
+        String commit1 = repository.commit("c1");
+
+        repository.createBranch("b1");
+        repository.checkout("b1");
+
+        Path file2 = createFile("f2", "2");
+        repository.addFile(file2);
+        String commit2 = repository.commit("c2");
+
+        repository.checkout("master");
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .onBranch("master")
+                .onCommit(commit1)
+                .withCommittedFiles(file1)
+        );
+        assertThat(repository.getLog())
+            .extracting("message")
+            .containsExactly("c1");
+
+        Path file3 = createFile("f3", "3");
+        repository.addFile(file3);
+        String commit3 = repository.commit("c3");
+
+        repository.checkout("b1");
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .onBranch("b1")
+                .onCommit(commit2)
+                .withCommittedFiles(file1, file2)
+        );
+        assertThat(repository.getLog())
+            .extracting("message")
+            .containsExactly("c2", "c1");
+
+        repository.checkout("master");
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .onBranch("master")
+                .onCommit(commit3)
+                .withCommittedFiles(file1, file3)
+        );
+        assertThat(repository.getLog())
+            .extracting("message")
+            .containsExactly("c3", "c1");
+    }
+
+    @Test
+    public void checkouting_to_commit_works_with_checkout_method() throws IOException {
+        Path file1 = createFile("f1", "1");
+        repository.addFile(file1);
+        String commit1 = repository.commit("c1");
+
+        Path file2 = createFile("f2", "2");
+        repository.addFile(file2);
+        String commit2 = repository.commit("c2");
+
+        repository.checkout(commit1);
+
+        assertThat(repository.getStatus()).isEqualTo(
+            new StatusBuilder()
+                .onCommit(commit1)
+                .withCommittedFiles(file1)
+        );
+    }
 }

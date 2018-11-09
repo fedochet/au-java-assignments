@@ -143,7 +143,7 @@ public class RepositoryManagerComplexTest extends TempDirectoryTestBase {
                 .withCommittedFiles(f1, f2, f3)
         );
 
-        repository.checkoutToCommit(commit1);
+        repository.checkout(commit1);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
             FileReference.fromPath(hash1, relativeF1)
         );
@@ -155,7 +155,7 @@ public class RepositoryManagerComplexTest extends TempDirectoryTestBase {
         assertThat(f2).doesNotExist();
         assertThat(f3).doesNotExist();
 
-        repository.checkoutToCommit(commit2);
+        repository.checkout(commit2);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
             FileReference.fromPath(hash1, relativeF1),
             FileReference.fromPath(hash2, relativeF2)
@@ -168,7 +168,7 @@ public class RepositoryManagerComplexTest extends TempDirectoryTestBase {
         assertThat(f2).hasContent("f2 initial");
         assertThat(f3).doesNotExist();
 
-        repository.checkoutToCommit(commit3);
+        repository.checkout(commit3);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
             FileReference.fromPath(hash1, relativeF1),
             FileReference.fromPath(hash2, relativeF2),
@@ -182,7 +182,7 @@ public class RepositoryManagerComplexTest extends TempDirectoryTestBase {
         assertThat(f2).hasContent("f2 initial");
         assertThat(f3).hasContent("f3 initial");
 
-        repository.checkoutToCommit(commit4);
+        repository.checkout(commit4);
         assertThat(repository.getCurrentIndex()).containsExactlyInAnyOrder(
             FileReference.fromPath(modifiedHash1, relativeF1),
             FileReference.fromPath(hash2, relativeF2),
@@ -310,12 +310,12 @@ public class RepositoryManagerComplexTest extends TempDirectoryTestBase {
             onMasterCommit(commit3).withCommittedFiles(f1, f3)
         );
 
-        repository.checkoutToCommit(commit1);
+        repository.checkout(commit1);
         assertThat(repository.getStatus()).isEqualTo(
             onCommit(commit1).withCommittedFiles(f1)
         );
 
-        repository.checkoutToCommit(commit3);
+        repository.checkout(commit3);
         assertThat(repository.getStatus()).isEqualTo(
             onCommit(commit3).withCommittedFiles(f1, f3)
         );
