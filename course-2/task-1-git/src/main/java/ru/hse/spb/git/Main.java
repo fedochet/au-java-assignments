@@ -169,6 +169,17 @@ class GitReset implements RepositoryAction {
     }
 }
 
+@Command(name = "branch")
+class GitBranch implements RepositoryAction {
+    @Parameters(index = "0", paramLabel = "BRANCH_NAME")
+    private String branchName;
+
+    @Override
+    public void invoke(@NotNull RepositoryManager manager) throws IOException {
+        manager.createBranch(branchName);
+    }
+}
+
 @Command(subcommands = {
     GitLog.class,
     GitInit.class,
@@ -178,6 +189,7 @@ class GitReset implements RepositoryAction {
     GitAdd.class,
     GitRm.class,
     GitStatusCommand.class,
+    GitBranch.class
 })
 class GitCommand {
 }

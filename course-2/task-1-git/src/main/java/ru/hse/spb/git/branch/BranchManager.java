@@ -26,7 +26,7 @@ public class BranchManager {
         try {
             branchFile = Files.createFile(root.resolve(name));
         } catch (FileAlreadyExistsException e) {
-            throw new IllegalArgumentException("Branch with name " + name + " is already exists!", e);
+            throw new IllegalArgumentException("Branch with name " + name + " already exists!", e);
         }
 
         Files.write(branchFile, parentCommitHash.getBytes(ENCODING));
