@@ -1,83 +1,130 @@
 package threadpool;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ThreadPoolImplTest {
+class ThreadPoolImplTest {
 
     private final ThreadPoolImpl threadPool = ThreadPoolImpl.create(4);
 
-    @After
-    public void shutdown() {
+    @AfterEach
+    void shutdown() {
         threadPool.shutdown();
     }
 
     @Test
-    public void test_shutdown() {
+    void test_shutdown() {
         ThreadPoolImpl threadPool = ThreadPoolImpl.create(10);
         threadPool.shutdown();
     }
 
     @Test
-    public void test_simple_task() throws LightExecutionException, InterruptedException {
+    void test_simple_tasks() {
+        AtomicInteger atomicInteger = new AtomicInteger(0);
         List<LightFuture<Integer>> futures = new ArrayList<>();
-        for (int i = 0; i < 8; i++) {
-            final int j = i;
-            LightFuture<Integer> result = threadPool.submit(() -> {
-                sleepFor(4);
-                return j;
-            });
 
-            futures.add(result);
+        for (int i = 0; i < 1024; i++) {
+            futures.add(threadPool.submit(() ->
+                returnAfterMillis(5, atomicInteger::incrementAndGet)
+            ));
         }
 
-        for (LightFuture<Integer> future : futures) {
-            System.out.println("Printing future!");
-            System.out.println(future.get());
-        }
+        Set<Integer> values = futures.stream().map(this::safelyGet).collect(Collectors.toSet());
+        Set<Integer> expected = Stream.iterate(1, i -> i + 1).limit(1024).collect(Collectors.toSet());
+
+        assertEquals(1024, atomicInteger.get());
+        assertEquals(expected, values);
     }
 
     @Test
-    public void two_waiters_on_same_future() throws LightExecutionException, InterruptedException {
-        LightFuture<String> task = threadPool.submit(() -> {
-            try {
-                Thread.sleep(2 * 1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            return "Hello";
+    void test_light_exception_thrown() {
+        LightFuture<String> error = threadPool.submit(() -> {
+            sleepForMillis(50);
+            throw new RuntimeException("Error");
         });
 
-        Supplier<Void> doubledTask = () -> {
-            try {
-                assertEquals("Hello", task.get());
-            } catch (LightExecutionException | InterruptedException e) {
-                fail(e.getMessage());
-            }
-
-            return null;
-        };
-
-        LightFuture<Void> waiter1 = threadPool.submit(doubledTask);
-        LightFuture<Void> waiter2 = threadPool.submit(doubledTask);
-
-        waiter1.get();
-        waiter2.get();
+        assertThrows(LightExecutionException.class, error::get);
     }
 
-    private void sleepFor(int seconds) {
-        try {
-            Thread.sleep(seconds * 1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    @Test
+    void future_is_ready_after_exception_is_thrown() {
+        LightFuture<String> error = threadPool.submit(() -> {
+            sleepForMillis(50);
+            throw new RuntimeException("Error");
+        });
+
+        assertThrows(LightExecutionException.class, error::get);
+        assertTrue(error.isReady());
+    }
+
+    @Test
+    void test_future_is_not_ready_after_creation() {
+        LightFuture<String> future = threadPool.submit(() -> returnAfterMillis(100, "String"));
+
+        assertTrue(!future.isReady());
+    }
+
+    @Test
+    void future_is_ready_after_get_returns() throws LightExecutionException, InterruptedException {
+        LightFuture<String> future = threadPool.submit(() -> returnAfterMillis(100, "result"));
+
+        assertEquals("result", future.get());
+        assertTrue(future.isReady());
+    }
+
+    @Test
+    void there_is_actually_n_threads() throws LightExecutionException, InterruptedException {
+        Set<Long> threadIds = Collections.synchronizedSet(new HashSet<>());
+        ThreadPoolImpl threadPool = ThreadPoolImpl.create(100);
+
+        List<LightFuture> futures = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            LightFuture<Boolean> submit = threadPool.submit(() -> {
+                Long threadId = Thread.currentThread().getId();
+                return threadIds.add(returnAfterMillis(50, threadId));
+            });
+
+            futures.add(submit);
         }
+
+        for (LightFuture future : futures) {
+            assertTrue((boolean) future.get());
+        }
+
+        assertEquals(100, threadIds.size());
+    }
+
+    private <T> T safelyGet(LightFuture<T> f) {
+        try {
+            return f.get();
+        } catch (InterruptedException | LightExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    private void sleepForMillis(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T returnAfterMillis(int millis, T t) {
+        return returnAfterMillis(millis, () -> t);
+    }
+
+    private <T> T returnAfterMillis(int millis, Supplier<T> t) {
+        sleepForMillis(millis);
+        return t.get();
     }
 }
