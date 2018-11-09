@@ -37,7 +37,7 @@ public class ThreadPoolImpl implements ThreadPool {
 
     @Override
     public <T> LightFuture<T> submit(Supplier<? extends T> task) {
-        LightFutureImpl<T> result = new LightFutureImpl<>();
+        LightFutureImpl<T> result = new LightFutureImpl<>(queue);
 
         queue.add(() -> {
             try {

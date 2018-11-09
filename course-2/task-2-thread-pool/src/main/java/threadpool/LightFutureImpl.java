@@ -4,12 +4,17 @@ import java.util.function.Function;
 
 class LightFutureImpl<T> implements LightFuture<T> {
     private final Object lock = new Object();
+    private final BlockingQueue<Task> queue;
 
     private volatile boolean isReady = false;
 
     private boolean isSuccessful = false;
     private T result;
     private Throwable error;
+
+    LightFutureImpl(BlockingQueue<Task> queue) {
+        this.queue = queue;
+    }
 
     @Override
     public boolean isReady() {
@@ -39,7 +44,18 @@ class LightFutureImpl<T> implements LightFuture<T> {
 
     @Override
     public <R> LightFuture<R> thenApply(Function<? super T, ? extends R> function) {
-        throw new IllegalArgumentException("Not supported");
+        LightFutureImpl<R> result = new LightFutureImpl<>(queue);
+
+        queue.add(() -> {
+            try {
+                T t = this.get();
+                result.finishWithResult(function.apply(t));
+            } catch (LightExecutionException e) {
+                result.finishWithError(e.getCause());
+            }
+        });
+
+        return result;
     }
 
     /**
