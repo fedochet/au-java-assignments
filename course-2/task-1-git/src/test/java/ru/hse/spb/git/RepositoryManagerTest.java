@@ -1,6 +1,7 @@
 package ru.hse.spb.git;
 
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import ru.hse.spb.git.commit.CommitInfo;
@@ -13,6 +14,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class RepositoryManagerTest extends TempDirectoryTestBase {
 
@@ -301,4 +303,14 @@ public class RepositoryManagerTest extends TempDirectoryTestBase {
         assertThat(repository.getLog()).hasSize(3);
     }
 
+    @Test
+    public void commit_cannot_be_performed_without_staged_or_removed_files() throws IOException {
+        Path newFileOne = createFile("f1", "1");
+        repository.addFile(newFileOne);
+        repository.commit("c2");
+
+        assertThatThrownBy(() ->
+            repository.commit("c2")
+        ).isExactlyInstanceOf(IllegalStateException.class);
+    }
 }

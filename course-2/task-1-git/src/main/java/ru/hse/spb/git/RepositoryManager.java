@@ -108,6 +108,11 @@ public class RepositoryManager {
 
     @NotNull
     public String commit(@NotNull String commitMessage) throws IOException {
+        Status status = getStatus();
+        if (status.getStagedFiles().isEmpty() && status.getDeletedFiles().isEmpty()) {
+            throw new IllegalStateException("Nothing to commit!");
+        }
+
         String treeHash = buildRootTree();
         Commit commit = commitRepository.createCommit(
             treeHash,

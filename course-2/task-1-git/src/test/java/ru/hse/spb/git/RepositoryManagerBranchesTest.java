@@ -53,6 +53,7 @@ public class RepositoryManagerBranchesTest extends TempDirectoryTestBase {
         assertThat(b1.getHeadCommit()).isEqualTo(commit1);
 
         createFile(file1, "2");
+        repository.addFile(file1);
         String commit2 = repository.commit("c2");
 
         Branch b2 = repository.createBranch("b2");
