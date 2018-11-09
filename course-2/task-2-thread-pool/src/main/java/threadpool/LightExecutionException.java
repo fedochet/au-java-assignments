@@ -1,6 +1,6 @@
 package threadpool;
 
-class LightExecutionException extends Exception {
+public class LightExecutionException extends Exception {
     LightExecutionException(Throwable reason) {
         super(reason);
     }

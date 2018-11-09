@@ -2,7 +2,7 @@ package threadpool;
 
 import java.util.function.Function;
 
-class LightFutureImpl<T> implements LightFuture<T> {
+final class LightFutureImpl<T> implements LightFuture<T> {
     private final Object lock = new Object();
     private final BlockingQueue<Task> queue;
 
@@ -64,7 +64,7 @@ class LightFutureImpl<T> implements LightFuture<T> {
      * Locking is required to prevent accidentally finishing future twice (might be removed because
      * in current code it might never happen).
      */
-    public void finishWithResult(T result) {
+    void finishWithResult(T result) {
         synchronized (lock) {
             assertNotFinished();
 
@@ -77,7 +77,7 @@ class LightFutureImpl<T> implements LightFuture<T> {
         }
     }
 
-    public void finishWithError(Throwable error) {
+    void finishWithError(Throwable error) {
         synchronized (lock) {
             assertNotFinished();
 

@@ -4,7 +4,7 @@ import java.util.function.Supplier;
 
 // TODO: 08.11.18 throw if tasks are submitted into shutdown pool
 // TODO: 08.11.18 make all classes public
-public class ThreadPoolImpl implements ThreadPool {
+public final class ThreadPoolImpl implements ThreadPool {
 
     private final Thread[] threads;
     private final BlockingQueue<Task> queue = new BlockingQueue<>();
@@ -42,7 +42,7 @@ public class ThreadPoolImpl implements ThreadPool {
         queue.add(() -> {
             try {
                 result.finishWithResult(task.get());
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 result.finishWithError(e);
             }
         });

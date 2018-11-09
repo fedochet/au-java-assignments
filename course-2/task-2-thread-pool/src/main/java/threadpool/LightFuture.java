@@ -2,7 +2,7 @@ package threadpool;
 
 import java.util.function.Function;
 
-interface LightFuture<T> {
+public interface LightFuture<T> {
     boolean isReady();
 
     /**
