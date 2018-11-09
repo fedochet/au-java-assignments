@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 public class ThreadPoolImpl implements ThreadPool {
 
     private final Thread[] threads;
-    private final BlockingQueue<Runnable> queue = new BlockingQueue<>();
+    private final BlockingQueue<Task> queue = new BlockingQueue<>();
     private final ThreadWorker threadWorker = new ThreadWorker(queue);
 
     public static ThreadPoolImpl create(int threadsNumber) {
@@ -42,7 +42,7 @@ public class ThreadPoolImpl implements ThreadPool {
         queue.add(() -> {
             try {
                 result.finishWithResult(task.get());
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 result.finishWithError(e);
             }
         });

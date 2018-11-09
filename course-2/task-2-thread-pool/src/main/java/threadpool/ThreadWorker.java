@@ -1,17 +1,17 @@
 package threadpool;
 
 final class ThreadWorker implements Runnable {
-    private final BlockingQueue<Runnable> queue;
+    private final BlockingQueue<Task> queue;
     private boolean isStopped = false;
 
-    ThreadWorker(BlockingQueue<Runnable> queue) {
+    ThreadWorker(BlockingQueue<Task> queue) {
         this.queue = queue;
     }
 
     @Override
     public void run() {
+        Task task;
         while (!isStopped) {
-            Runnable task;
             try {
                 task = queue.remove();
             } catch (InterruptedException e) {
@@ -21,11 +21,23 @@ final class ThreadWorker implements Runnable {
                 continue;
             }
 
-            task.run();
+            executeTask(task);
         }
     }
 
     public void stop() {
         isStopped = true;
+    }
+
+    private void executeTask(Task task) {
+        while (!isStopped) {
+            try {
+
+                task.run();
+                return;
+
+            } catch (InterruptedException ignored) {
+            }
+        }
     }
 }
