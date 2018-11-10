@@ -50,6 +50,8 @@ final class LightFutureImpl<T> implements LightFuture<T> {
             try {
                 T t = this.get();
                 result.finishWithResult(function.apply(t));
+            } catch (RuntimeException e) {
+                result.finishWithError(e);
             } catch (LightExecutionException e) {
                 result.finishWithError(e.getCause());
             }

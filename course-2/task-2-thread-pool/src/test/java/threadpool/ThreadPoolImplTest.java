@@ -102,6 +102,61 @@ class ThreadPoolImplTest {
         assertEquals(100, threadIds.size());
     }
 
+    @Test
+    void thenApply_works_as_expected() throws LightExecutionException, InterruptedException {
+        LightFuture<String> source = threadPool.submit(() -> returnAfterMillis(100, "result"));
+
+        LightFuture<String> doubledSource = source.thenApply(r -> r + r);
+
+        assertEquals("result" + "result", doubledSource.get());
+    }
+
+    @Test
+    void count_pow_on_futures() throws LightExecutionException, InterruptedException {
+        LightFuture<Integer> curr = threadPool.submit(() -> returnAfterMillis(10, 1));
+
+        int n = 20;
+        for (int i = 0; i < n; i++) {
+            curr = curr.thenApply(j -> returnAfterMillis(1, j * 2));
+        }
+
+        assertEquals(Math.pow(2, n), (int)curr.get());
+    }
+
+    @Test
+    void exception_from_derived_can_be_seen() throws InterruptedException {
+        LightFuture<Integer> source = threadPool.submit(() -> returnAfterMillis(100, 1));
+
+        LightFuture<Object> derived = source.thenApply(i -> {
+            sleepForMillis(100);
+            throw new RuntimeException("derived");
+        });
+
+        try {
+            derived.get();
+            fail("Derived should not return");
+        }  catch (LightExecutionException e) {
+            assertEquals("derived", e.getCause().getMessage());
+        }
+    }
+
+    @Test
+    void exception_from_source_is_passed_to_derived_future() throws InterruptedException {
+        LightFuture<Integer> source = threadPool.submit(() -> {
+            sleepForMillis(100);
+            throw new RuntimeException("source");
+        });
+
+        LightFuture<Integer> derived = source.thenApply(i -> i * 2);
+
+        try {
+            derived.get();
+            fail("Derived should not return");
+        } catch (LightExecutionException e) {
+            assertEquals("source", e.getCause().getMessage());
+        }
+    }
+
     private <T> T safelyGet(LightFuture<T> f) {
         try {
             return f.get();
