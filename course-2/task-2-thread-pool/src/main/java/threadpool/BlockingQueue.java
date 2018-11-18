@@ -13,7 +13,7 @@ final class BlockingQueue<T> {
     void add(T task) {
         synchronized (lock) {
             taskQueue.add(task);
-            lock.notify(); // notify one waiting person
+            lock.notify(); // notify one waiting thread
         }
     }
 

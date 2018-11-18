@@ -157,6 +157,14 @@ class ThreadPoolImplTest {
         }
     }
 
+    @Test
+    void cannot_submit_into_shutdown_tread_pool() {
+        ThreadPool threadPool = ThreadPoolImpl.create(10);
+        threadPool.shutdown();
+
+        assertThrows(IllegalStateException.class, () -> threadPool.submit(() -> 100));
+    }
+
     private <T> T safelyGet(LightFuture<T> f) {
         try {
             return f.get();

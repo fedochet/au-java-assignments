@@ -2,7 +2,7 @@ package threadpool;
 
 final class ThreadWorker implements Runnable {
     private final BlockingQueue<Task> queue;
-    private boolean isStopped = false;
+    private volatile boolean isStopped = false;
 
     ThreadWorker(BlockingQueue<Task> queue) {
         this.queue = queue;
@@ -29,4 +29,7 @@ final class ThreadWorker implements Runnable {
         isStopped = true;
     }
 
+    boolean isStopped() {
+        return isStopped;
+    }
 }

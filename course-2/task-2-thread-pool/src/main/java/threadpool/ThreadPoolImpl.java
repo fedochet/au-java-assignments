@@ -37,6 +37,10 @@ public final class ThreadPoolImpl implements ThreadPool {
 
     @Override
     public <T> LightFuture<T> submit(Supplier<? extends T> task) {
+        if (threadWorker.isStopped()) {
+            throw new IllegalStateException("Cannot submit, threadpool has been shut down");
+        }
+
         LightFutureImpl<T> result = new LightFutureImpl<>(queue);
 
         queue.add(() -> {
@@ -73,5 +77,4 @@ public final class ThreadPoolImpl implements ThreadPool {
             }
         }
     }
-
 }
