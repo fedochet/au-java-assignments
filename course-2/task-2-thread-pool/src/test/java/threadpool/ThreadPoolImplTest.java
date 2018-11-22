@@ -3,6 +3,7 @@ package threadpool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -120,7 +121,7 @@ class ThreadPoolImplTest {
             curr = curr.thenApply(j -> returnAfterMillis(1, j * 2));
         }
 
-        assertEquals(Math.pow(2, n), (int)curr.get());
+        assertEquals(Math.pow(2, n), (int) curr.get());
     }
 
     @Test
@@ -135,7 +136,7 @@ class ThreadPoolImplTest {
         try {
             derived.get();
             fail("Derived should not return");
-        }  catch (LightExecutionException e) {
+        } catch (LightExecutionException e) {
             assertEquals("derived", e.getCause().getMessage());
         }
     }
@@ -163,6 +164,31 @@ class ThreadPoolImplTest {
         threadPool.shutdown();
 
         assertThrows(IllegalStateException.class, () -> threadPool.submit(() -> 100));
+    }
+
+    @Test
+    void thread_pool_does_not_gives_threads_to_thenApply_tasks_until_their_parent_is_ready() {
+        assertTimeout(Duration.ofSeconds(6), () -> {
+            LightFuture<Integer> parentTask = threadPool.submit(() -> returnAfterMillis(5000, 0));
+
+            List<LightFuture<String>> children = new ArrayList<>();
+            for (int i = 0; i < 100; i++) {
+                children.add(parentTask.thenApply(j -> "children"));
+            }
+
+            // Those three tasks should start executing right away if `thenApply` doesn't get the thread.
+            LightFuture<Integer> lf1 = threadPool.submit(() -> returnAfterMillis(5000, 1));
+            LightFuture<Integer> lf2 = threadPool.submit(() -> returnAfterMillis(5000, 2));
+            LightFuture<Integer> lf3 = threadPool.submit(() -> returnAfterMillis(5000, 3));
+
+            assertEquals(1, (int)lf1.get());
+            assertEquals(2, (int)lf2.get());
+            assertEquals(3, (int)lf3.get());
+
+            for (LightFuture<String> child : children) {
+                assertEquals("children", child.get());
+            }
+        });
     }
 
     private <T> T safelyGet(LightFuture<T> f) {

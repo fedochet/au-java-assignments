@@ -1,10 +1,13 @@
 package threadpool;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 final class LightFutureImpl<T> implements LightFuture<T> {
     private final Object lock = new Object();
-    private final BlockingQueue<Task> queue;
+    private final BlockingQueue<Runnable> queue;
+    private final List<Runnable> spawnedFuturesTasks = new ArrayList<>();
 
     private volatile boolean isReady = false;
 
@@ -12,7 +15,7 @@ final class LightFutureImpl<T> implements LightFuture<T> {
     private T result;
     private Throwable error;
 
-    LightFutureImpl(BlockingQueue<Task> queue) {
+    LightFutureImpl(BlockingQueue<Runnable> queue) {
         this.queue = queue;
     }
 
@@ -35,29 +38,33 @@ final class LightFutureImpl<T> implements LightFuture<T> {
             }
         }
 
-        if (isSuccessful) {
-            return result;
-        } else {
-            throw new LightExecutionException(error);
-        }
+        return getComputation();
     }
 
     @Override
     public <R> LightFuture<R> thenApply(Function<? super T, ? extends R> function) {
-        LightFutureImpl<R> result = new LightFutureImpl<>(queue);
+        LightFutureImpl<R> spawnedFuture = new LightFutureImpl<>(queue);
 
-        queue.add(() -> {
+        Runnable spawnedFutureTask = () -> {
             try {
-                T t = this.get();
-                result.finishWithResult(function.apply(t));
+                R result = function.apply(getComputation());
+                spawnedFuture.finishWithResult(result);
             } catch (RuntimeException e) {
-                result.finishWithError(e);
+                spawnedFuture.finishWithError(e);
             } catch (LightExecutionException e) {
-                result.finishWithError(e.getCause());
+                spawnedFuture.finishWithError(e.getCause());
             }
-        });
+        };
 
-        return result;
+        synchronized (spawnedFuturesTasks) {
+            if (isReady) {
+                queue.add(spawnedFutureTask);
+            } else {
+                spawnedFuturesTasks.add(spawnedFutureTask);
+            }
+        }
+
+        return spawnedFuture;
     }
 
     /**
@@ -76,6 +83,7 @@ final class LightFutureImpl<T> implements LightFuture<T> {
             isReady = true;
 
             lock.notifyAll();
+            submitSpawnedFutures();
         }
     }
 
@@ -89,6 +97,22 @@ final class LightFutureImpl<T> implements LightFuture<T> {
             isReady = true;
 
             lock.notifyAll();
+            submitSpawnedFutures();
+        }
+    }
+
+    private void submitSpawnedFutures() {
+        synchronized (spawnedFuturesTasks) {
+            spawnedFuturesTasks.forEach(queue::add);
+            spawnedFuturesTasks.clear(); // allowing gc to collect them if needed
+        }
+    }
+
+    private T getComputation() throws LightExecutionException {
+        if (isSuccessful) {
+            return result;
+        } else {
+            throw new LightExecutionException(error);
         }
     }
 

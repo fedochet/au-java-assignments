@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 public final class ThreadPoolImpl implements ThreadPool {
 
     private final Thread[] threads;
-    private final BlockingQueue<Task> queue = new BlockingQueue<>();
+    private final BlockingQueue<Runnable> queue = new BlockingQueue<>();
     private final ThreadWorker threadWorker = new ThreadWorker(queue);
 
     public static ThreadPoolImpl create(int threadsNumber) {
@@ -38,7 +38,7 @@ public final class ThreadPoolImpl implements ThreadPool {
     @Override
     public <T> LightFuture<T> submit(Supplier<? extends T> task) {
         if (threadWorker.isStopped()) {
-            throw new IllegalStateException("Cannot submit, threadpool has been shut down");
+            throw new IllegalStateException("Cannot submit, thread pool has been shut down");
         }
 
         LightFutureImpl<T> result = new LightFutureImpl<>(queue);
