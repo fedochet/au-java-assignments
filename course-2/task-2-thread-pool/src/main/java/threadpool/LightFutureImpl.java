@@ -9,9 +9,8 @@ final class LightFutureImpl<T> implements LightFuture<T> {
     private final BlockingQueue<Runnable> queue;
     private final List<Runnable> spawnedFuturesTasks = new ArrayList<>();
 
-    private volatile boolean isReady = false;
+    private volatile State state = State.COMPUTING;
 
-    private boolean isSuccessful = false;
     private T result;
     private Throwable error;
 
@@ -21,7 +20,7 @@ final class LightFutureImpl<T> implements LightFuture<T> {
 
     @Override
     public boolean isReady() {
-        return isReady;
+        return state != State.COMPUTING;
     }
 
     /**
@@ -30,9 +29,9 @@ final class LightFutureImpl<T> implements LightFuture<T> {
      */
     @Override
     public T get() throws InterruptedException, LightExecutionException {
-        if (!isReady) {
+        if (!isReady()) {
             synchronized (lock) {
-                while (!isReady) { // spurious wakeup
+                while (!isReady()) { // spurious wakeup
                     lock.wait();
                 }
             }
@@ -57,7 +56,7 @@ final class LightFutureImpl<T> implements LightFuture<T> {
         };
 
         synchronized (spawnedFuturesTasks) {
-            if (isReady) {
+            if (isReady()) {
                 queue.add(spawnedFutureTask);
             } else {
                 spawnedFuturesTasks.add(spawnedFutureTask);
@@ -77,10 +76,8 @@ final class LightFutureImpl<T> implements LightFuture<T> {
         synchronized (lock) {
             assertNotFinished();
 
-            isSuccessful = true;
             this.result = result;
-
-            isReady = true;
+            state = State.COMPUTED_SUCCESSFULLY;
 
             lock.notifyAll();
             submitSpawnedFutures();
@@ -91,10 +88,8 @@ final class LightFutureImpl<T> implements LightFuture<T> {
         synchronized (lock) {
             assertNotFinished();
 
-            isSuccessful = false;
             this.error = error;
-
-            isReady = true;
+            state = State.COMPUTED_EXCEPTIONALLY;
 
             lock.notifyAll();
             submitSpawnedFutures();
@@ -109,7 +104,9 @@ final class LightFutureImpl<T> implements LightFuture<T> {
     }
 
     private T getComputation() throws LightExecutionException {
-        if (isSuccessful) {
+        if (state == State.COMPUTING) throw new IllegalStateException("Future is not computed!");
+
+        if (state == State.COMPUTED_SUCCESSFULLY) {
             return result;
         } else {
             throw new LightExecutionException(error);
@@ -117,6 +114,12 @@ final class LightFutureImpl<T> implements LightFuture<T> {
     }
 
     private void assertNotFinished() {
-        if (isReady) throw new IllegalStateException("This future is already finished!");
+        if (isReady()) throw new IllegalStateException("This future is already finished!");
+    }
+
+    private enum State {
+        COMPUTING,
+        COMPUTED_SUCCESSFULLY,
+        COMPUTED_EXCEPTIONALLY
     }
 }

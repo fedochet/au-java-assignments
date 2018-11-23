@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ThreadPoolImplTest {
 
-    private final ThreadPoolImpl threadPool = ThreadPoolImpl.create(4);
+    private final ThreadPool threadPool = ThreadPoolImpl.create(4);
 
     @AfterEach
     void shutdown() {
