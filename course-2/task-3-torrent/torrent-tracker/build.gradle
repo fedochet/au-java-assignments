@@ -12,3 +12,7 @@ mainClassName = "org.anstreth.torrent.tracker.Main"
 repositories {
     mavenCentral()
 }
+
+dependencies {
+    compile project(':torrent-requests')
+}
