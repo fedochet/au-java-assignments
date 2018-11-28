@@ -1,79 +1,93 @@
 package org.anstreth.torrent.tracker;
 
+import org.anstreth.torrent.serialization.Deserializer;
+import org.anstreth.torrent.serialization.Serializer;
 import org.anstreth.torrent.tracker.request.serialization.ListRequestDeserializer;
 import org.anstreth.torrent.tracker.request.serialization.SourcesRequestDeserializer;
 import org.anstreth.torrent.tracker.request.serialization.UploadRequestDeserializer;
-import org.anstreth.torrent.tracker.response.ListResponse;
-import org.anstreth.torrent.tracker.response.SourcesResponse;
-import org.anstreth.torrent.tracker.response.UploadResponse;
-import org.anstreth.torrent.tracker.response.serialization.*;
+import org.anstreth.torrent.tracker.response.serialization.ListResponseSerializer;
+import org.anstreth.torrent.tracker.response.serialization.SourcesResponseSerializer;
+import org.anstreth.torrent.tracker.response.serialization.UploadResponseSerializer;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+import static org.anstreth.torrent.tracker.request.TrackerRequestMarker.*;
 
 public class TrackerServer {
-    private static final byte LIST_REQUEST = 1;
-    private static final byte UPLOAD_REQUEST = 2;
-    private static final byte SOURCES_REQUEST = 3;
-    private static final byte UPDATE_REQUEST = 4;
-
-    private static final ListRequestDeserializer LIST_REQUEST_DESERIALIZER = new ListRequestDeserializer();
-    private static final UploadRequestDeserializer UPLOAD_REQUEST_DESERIALIZER = new UploadRequestDeserializer();
-    private static final SourcesRequestDeserializer SOURCES_REQUEST_DESERIALIZER = new SourcesRequestDeserializer();
-    private static final UploadRequestDeserializer UPDATE_REQUEST_DESERIALIZER = new UploadRequestDeserializer();
-
-    private static final ListResponseSerializer LIST_RESPONSE_SERIALIZER = new ListResponseSerializer();
-    private static final UploadResponseSerializer UPLOAD_RESPONSE_SERIALIZER = new UploadResponseSerializer();
-    private static final SourcesResponseSerializer SOURCES_RESPONSE_SERIALIZER = new SourcesResponseSerializer();
-    private static final UploadResponseSerializer UPDATE_RESPONSE_SERIALIZER = new UploadResponseSerializer();
-
     private final ServerSocket serverSocket;
+    private final Map<Byte, RequestHandler> handlers = new HashMap<>();
 
-    public TrackerServer(int port) throws IOException {
+    public TrackerServer(int port, TrackerController trackerController) throws IOException {
         serverSocket = new ServerSocket(port);
+
+        // This is so ugly I will have to rework that
+        registerMessageHandler(
+            LIST_REQUEST,
+            new ListRequestDeserializer(), trackerController::handle, new ListResponseSerializer()
+        );
+        registerMessageHandler(
+            UPLOAD_REQUEST,
+            new UploadRequestDeserializer(), trackerController::handle, new UploadResponseSerializer()
+        );
+        registerMessageHandler(
+            SOURCES_REQUEST,
+            new SourcesRequestDeserializer(), trackerController::handle, new SourcesResponseSerializer()
+        );
+        registerMessageHandler(
+            UPDATE_REQUEST,
+            new UploadRequestDeserializer(), trackerController::handle, new UploadResponseSerializer()
+        );
     }
 
-    public void run(TrackerController trackerController) throws IOException {
+    public void run() {
         while (true) {
             try (Socket accept = serverSocket.accept()) {
-                handleRequest(accept, trackerController);
+                handleRequest(accept);
+            } catch (IOException e) {
+                // TODO log exception
             }
         }
     }
 
-    private void handleRequest(Socket accept, TrackerController trackerController) throws IOException {
-        DataInputStream inputStream = new DataInputStream(accept.getInputStream());
-        OutputStream outputStream = accept.getOutputStream();
-
+    private void handleRequest(Socket socket) throws IOException {
+        DataInputStream inputStream = new DataInputStream(socket.getInputStream());
         byte requestType = inputStream.readByte();
+        handlers.get(requestType).handle(socket);
+    }
 
-        switch (requestType) {
-            case LIST_REQUEST: {
-                ListResponse response = trackerController.handle(LIST_REQUEST_DESERIALIZER.deserialize(inputStream));
-                LIST_RESPONSE_SERIALIZER.serialize(response, outputStream);
-                break;
-            }
-
-            case UPLOAD_REQUEST: {
-                UploadResponse response = trackerController.handle(UPLOAD_REQUEST_DESERIALIZER.deserialize(inputStream));
-                UPLOAD_RESPONSE_SERIALIZER.serialize(response, outputStream);
-                break;
-            }
-
-            case SOURCES_REQUEST: {
-                SourcesResponse response = trackerController.handle(SOURCES_REQUEST_DESERIALIZER.deserialize(inputStream));
-                SOURCES_RESPONSE_SERIALIZER.serialize(response, outputStream);
-                break;
-            }
-
-            case UPDATE_REQUEST: {
-                UploadResponse response = trackerController.handle(UPDATE_REQUEST_DESERIALIZER.deserialize(inputStream));
-                UPDATE_RESPONSE_SERIALIZER.serialize(response, outputStream);
-                break;
-            }
+    private <T, M> void registerMessageHandler(byte messageMarker,
+                                               Deserializer<T> deserializer,
+                                               Function<T, M> handler,
+                                               Serializer<M> serializer) {
+        if (handlers.containsKey(messageMarker)) {
+            throw new IllegalArgumentException(
+                "Handler for " + messageMarker + " marker is already present!"
+            );
         }
+
+        handlers.put(messageMarker, socket -> {
+            T request = deserializer.deserialize(socket.getInputStream());
+
+            M response;
+            try {
+                response = handler.apply(request);
+            } catch (RuntimeException e) {
+                // TODO log exception
+                return;
+            }
+
+            serializer.serialize(response, socket.getOutputStream());
+        });
+    }
+
+    @FunctionalInterface
+    private interface RequestHandler {
+        void handle(Socket socket) throws IOException;
     }
 }
