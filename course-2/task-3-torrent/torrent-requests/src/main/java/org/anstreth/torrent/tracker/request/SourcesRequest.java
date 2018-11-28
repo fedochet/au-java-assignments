@@ -1,9 +1,9 @@
-package org.anstreth.torrent.tracker.response;
+package org.anstreth.torrent.tracker.request;
 
-public class UploadResponse {
+public class SourcesRequest {
     private final int fileId;
 
-    public UploadResponse(int fileId) {
+    public SourcesRequest(int fileId) {
         this.fileId = fileId;
     }
 

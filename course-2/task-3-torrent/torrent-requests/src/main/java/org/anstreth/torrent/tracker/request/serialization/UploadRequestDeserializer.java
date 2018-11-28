@@ -1,8 +1,8 @@
-package org.anstreth.torrent.tracker.requests.serialization;
+package org.anstreth.torrent.tracker.request.serialization;
 
 import org.anstreth.torrent.serialization.Deserializer;
 import org.anstreth.torrent.serialization.SerializationUtils;
-import org.anstreth.torrent.tracker.requests.UploadRequest;
+import org.anstreth.torrent.tracker.request.UploadRequest;
 
 import java.io.DataInputStream;
 import java.io.IOException;

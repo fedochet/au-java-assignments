@@ -10,6 +10,6 @@ import java.io.OutputStream;
 public class UploadResponseSerializer implements Serializer<UploadResponse> {
     @Override
     public void serialize(UploadResponse value, OutputStream stream) throws IOException {
-        SerializationUtils.getDataOutputStream(stream).writeInt(value.getId());
+        SerializationUtils.getDataOutputStream(stream).writeInt(value.getFileId());
     }
 }
