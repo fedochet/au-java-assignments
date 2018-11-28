@@ -12,7 +12,3 @@ mainClassName = "org.anstreth.torrent.client.Main"
 repositories {
     mavenCentral()
 }
-
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-}

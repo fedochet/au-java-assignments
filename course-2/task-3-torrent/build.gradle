@@ -12,6 +12,12 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+
+allprojects {
+    pluginManager.withPlugin('java') {
+        dependencies {
+            testCompile group: 'junit', name: 'junit', version: '4.12'
+        }
+    }
 }
+
