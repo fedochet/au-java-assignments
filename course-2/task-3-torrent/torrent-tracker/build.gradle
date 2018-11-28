@@ -1,0 +1,18 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group 'org.anstreth'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+mainClassName = "org.anstreth.torrent.tracker.Main"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}

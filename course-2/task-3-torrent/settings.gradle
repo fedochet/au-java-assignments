@@ -1,0 +1,4 @@
+rootProject.name = 'task-3-torrent'
+include 'torrent-client'
+include 'torrent-tracker'
+
