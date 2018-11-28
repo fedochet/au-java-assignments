@@ -12,6 +12,8 @@ public class FileInfoSerializer implements Serializer<FileInfo> {
     @Override
     public void serialize(FileInfo value, OutputStream stream) throws IOException {
         DataOutputStream dataOutputStream = SerializationUtils.getDataOutputStream(stream);
+
+        dataOutputStream.writeInt(value.getId());
         dataOutputStream.writeUTF(value.getName());
         dataOutputStream.writeLong(value.getSize());
     }

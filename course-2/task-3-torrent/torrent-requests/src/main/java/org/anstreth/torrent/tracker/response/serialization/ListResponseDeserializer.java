@@ -13,7 +13,7 @@ public class ListResponseDeserializer implements Deserializer<ListResponse> {
     @Override
     public ListResponse deserialize(InputStream inputStream) throws IOException {
         return new ListResponse(
-                SerializationUtils.deserializeList(FILE_INFO_DESERIALIZER, inputStream)
+            SerializationUtils.deserializeList(FILE_INFO_DESERIALIZER, inputStream)
         );
     }
 }

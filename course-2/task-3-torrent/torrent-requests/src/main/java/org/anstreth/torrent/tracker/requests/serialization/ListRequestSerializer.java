@@ -8,5 +8,6 @@ import java.io.OutputStream;
 
 public class ListRequestSerializer implements Serializer<ListRequest> {
     @Override
-    public void serialize(ListRequest value, OutputStream stream) throws IOException {}
+    public void serialize(ListRequest value, OutputStream stream) throws IOException {
+    }
 }

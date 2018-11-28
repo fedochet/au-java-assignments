@@ -1,3 +1,4 @@
 package org.anstreth.torrent.tracker.requests;
 
-public class ListRequest {}
+public class ListRequest {
+}
