@@ -19,11 +19,11 @@ import java.util.function.Function;
 
 import static org.anstreth.torrent.tracker.request.TrackerRequestMarker.*;
 
-public class TrackerServer {
+class TrackerServer {
     private final ServerSocket serverSocket;
     private final Map<Byte, RequestHandler> handlers = new HashMap<>();
 
-    public TrackerServer(int port, TrackerController trackerController) throws IOException {
+    TrackerServer(int port, TrackerController trackerController) throws IOException {
         serverSocket = new ServerSocket(port);
 
         // This is so ugly I will have to rework that
@@ -39,18 +39,22 @@ public class TrackerServer {
             SOURCES_REQUEST,
             new SourcesRequestDeserializer(), trackerController::handle, new SourcesResponseSerializer()
         );
+
+        // FIXME wrong serializers
         registerMessageHandler(
             UPDATE_REQUEST,
             new UploadRequestDeserializer(), trackerController::handle, new UploadResponseSerializer()
         );
     }
 
-    public void run() {
+    void run() throws IOException {
         while (true) {
             try (Socket accept = serverSocket.accept()) {
-                handleRequest(accept);
-            } catch (IOException e) {
-                // TODO log exception
+                try {
+                    handleRequest(accept);
+                } catch (IOException e) {
+                    // TODO log exception
+                }
             }
         }
     }
