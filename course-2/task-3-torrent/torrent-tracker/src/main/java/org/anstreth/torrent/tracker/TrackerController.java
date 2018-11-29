@@ -1,5 +1,6 @@
 package org.anstreth.torrent.tracker;
 
+import org.anstreth.torrent.tracker.network.Request;
 import org.anstreth.torrent.tracker.request.ListRequest;
 import org.anstreth.torrent.tracker.request.SourcesRequest;
 import org.anstreth.torrent.tracker.request.UpdateRequest;
@@ -13,5 +14,5 @@ public interface TrackerController {
     UploadResponse handle(UploadRequest request);
     ListResponse handle(ListRequest request);
     SourcesResponse handle(SourcesRequest request);
-    UpdateResponse handle(UpdateRequest request);
+    UpdateResponse handle(Request<UpdateRequest> request);
 }

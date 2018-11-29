@@ -1,12 +1,12 @@
 package org.anstreth.torrent.tracker;
 
+import org.anstreth.torrent.tracker.network.Request;
 import org.anstreth.torrent.tracker.request.ListRequest;
 import org.anstreth.torrent.tracker.request.SourcesRequest;
 import org.anstreth.torrent.tracker.request.UpdateRequest;
 import org.anstreth.torrent.tracker.request.UploadRequest;
 import org.anstreth.torrent.tracker.response.*;
 
-import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -38,11 +38,10 @@ public class FilePersistentTrackerController implements TrackerController {
     }
 
     @Override
-    public UpdateResponse handle(UpdateRequest request) {
-        for (Integer fileId : request.getFileIds()) {
+    public UpdateResponse handle(Request<UpdateRequest> request) {
+        for (Integer fileId : request.getBody().getFileIds()) {
             List<SourceInfo> infos = sources.computeIfAbsent(fileId, id -> new ArrayList<>());
-            // TODO modify signature to be able to pull out inetAddress
-            infos.add(new SourceInfo(InetAddress.getLoopbackAddress(), request.getPort()));
+            infos.add(new SourceInfo(request.getInetAddress(), request.getBody().getPort()));
         }
 
         return new UpdateResponse(true);
