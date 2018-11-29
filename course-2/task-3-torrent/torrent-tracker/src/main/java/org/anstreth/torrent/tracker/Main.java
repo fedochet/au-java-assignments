@@ -41,6 +41,6 @@ public class Main {
             new UpdateRequestDeserializer(), trackerController::handle, new UpdateResponseSerializer()
         );
 
-        trackerServer.run();
+        trackerServer.start();
     }
 }
