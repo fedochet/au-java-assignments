@@ -9,10 +9,15 @@ import org.anstreth.torrent.tracker.response.ListResponse;
 import org.anstreth.torrent.tracker.response.SourcesResponse;
 import org.anstreth.torrent.tracker.response.UpdateResponse;
 import org.anstreth.torrent.tracker.response.UploadResponse;
+import org.jetbrains.annotations.NotNull;
 
 public interface TrackerController {
-    UploadResponse handle(UploadRequest request);
-    ListResponse handle(ListRequest request);
-    SourcesResponse handle(SourcesRequest request);
-    UpdateResponse handle(Request<UpdateRequest> request);
+    @NotNull
+    UploadResponse handle(@NotNull UploadRequest request);
+    @NotNull
+    ListResponse handle(@NotNull ListRequest request);
+    @NotNull
+    SourcesResponse handle(@NotNull SourcesRequest request);
+    @NotNull
+    UpdateResponse handle(@NotNull Request<UpdateRequest> request);
 }

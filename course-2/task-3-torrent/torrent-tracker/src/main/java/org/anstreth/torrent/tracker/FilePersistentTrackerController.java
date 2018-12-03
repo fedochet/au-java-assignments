@@ -8,6 +8,7 @@ import org.anstreth.torrent.tracker.request.SourcesRequest;
 import org.anstreth.torrent.tracker.request.UpdateRequest;
 import org.anstreth.torrent.tracker.request.UploadRequest;
 import org.anstreth.torrent.tracker.response.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -15,30 +16,35 @@ public class FilePersistentTrackerController implements TrackerController {
     private final FileInfoRepository fileInfoRepository;
     private final FileSourcesRepository sourcesRepository;
 
-    FilePersistentTrackerController(FileInfoRepository fileInfoRepository, FileSourcesRepository sourcesRepository) {
+    FilePersistentTrackerController(@NotNull FileInfoRepository fileInfoRepository,
+                                    @NotNull FileSourcesRepository sourcesRepository) {
         this.fileInfoRepository = fileInfoRepository;
         this.sourcesRepository = sourcesRepository;
     }
 
+    @NotNull
     @Override
-    public UploadResponse handle(UploadRequest request) {
+    public UploadResponse handle(@NotNull UploadRequest request) {
         int newFileId = fileInfoRepository.addFile(request.getFileName(), request.getFileSize());
         return new UploadResponse(newFileId);
     }
 
+    @NotNull
     @Override
-    public ListResponse handle(ListRequest request) {
+    public ListResponse handle(@NotNull ListRequest request) {
         return new ListResponse(fileInfoRepository.getAllFiles());
     }
 
+    @NotNull
     @Override
-    public SourcesResponse handle(SourcesRequest request) {
+    public SourcesResponse handle(@NotNull SourcesRequest request) {
         List<SourceInfo> fileSources = sourcesRepository.getFileSources(request.getFileId());
         return new SourcesResponse(fileSources);
     }
 
+    @NotNull
     @Override
-    public UpdateResponse handle(Request<UpdateRequest> request) {
+    public UpdateResponse handle(@NotNull Request<UpdateRequest> request) {
         UpdateRequest requestBody = request.getBody();
         for (Integer fileId : requestBody.getFileIds()) {
             sourcesRepository.addFileSource(fileId, request.getInetAddress(), requestBody.getPort());
