@@ -19,7 +19,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         TrackerServer trackerServer = new TrackerServer(SERVER_PORT);
-        TrackerController trackerController = new FilePersistentTrackerController();
+        TrackerController trackerController = new FilePersistentTrackerController(null, null);
 
         trackerServer.registerMessageHandler(
             LIST_REQUEST,

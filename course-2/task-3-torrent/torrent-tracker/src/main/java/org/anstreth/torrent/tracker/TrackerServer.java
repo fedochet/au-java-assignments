@@ -28,7 +28,7 @@ class TrackerServer {
         serverSocket = new ServerSocket(port);
     }
 
-    void start() throws IOException {
+    void start() {
         log.debug(
             "Server started at address {}, port {}",
             serverSocket.getInetAddress(),
