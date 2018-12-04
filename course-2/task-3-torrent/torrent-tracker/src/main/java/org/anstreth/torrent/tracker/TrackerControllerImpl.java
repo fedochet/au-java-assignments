@@ -12,12 +12,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class FilePersistentTrackerController implements TrackerController {
+public class TrackerControllerImpl implements TrackerController {
     private final FileInfoRepository fileInfoRepository;
     private final FileSourcesRepository sourcesRepository;
 
-    FilePersistentTrackerController(@NotNull FileInfoRepository fileInfoRepository,
-                                    @NotNull FileSourcesRepository sourcesRepository) {
+    TrackerControllerImpl(@NotNull FileInfoRepository fileInfoRepository,
+                          @NotNull FileSourcesRepository sourcesRepository) {
         this.fileInfoRepository = fileInfoRepository;
         this.sourcesRepository = sourcesRepository;
     }

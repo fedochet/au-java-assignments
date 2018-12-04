@@ -27,7 +27,7 @@ public class Main {
         }
 
         TrackerServer trackerServer = new TrackerServer(SERVER_PORT);
-        TrackerController trackerController = new FilePersistentTrackerController(
+        TrackerController trackerController = new TrackerControllerImpl(
             new PersistentFileInfoRepository(FILE_INFO_STORAGE),
             new InMemoryFileSourcesRepository()
         );
