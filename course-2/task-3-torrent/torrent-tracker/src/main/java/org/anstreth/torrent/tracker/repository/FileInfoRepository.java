@@ -19,5 +19,5 @@ public interface FileInfoRepository {
      * @return fileInfos sorted by fileId.
      */
     @NotNull
-    List<@NotNull FileInfo> getAllFiles();
+    List<FileInfo> getAllFiles();
 }
