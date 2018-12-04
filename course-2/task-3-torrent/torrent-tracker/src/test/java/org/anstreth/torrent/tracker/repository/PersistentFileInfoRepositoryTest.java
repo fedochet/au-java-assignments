@@ -10,7 +10,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,15 +47,15 @@ public class PersistentFileInfoRepositoryTest {
 
     @Test
     public void many_files_can_be_saved() {
-        String[] names = {"f1", "f2", "f3", "f4"};
+        List<String> names = Arrays.asList("f1", "f2", "f3", "f4");
 
-        for (int i = 0; i < names.length; i++) {
-            repository.addFile(names[i], i + 1);
+        for (int i = 0; i < names.size(); i++) {
+            repository.addFile(names.get(i), i + 1);
         }
 
         assertThat(repository.getAllFiles())
             .extracting("name")
-            .containsExactly(names);
+            .containsExactlyElementsOf(names);
     }
 
     @Test

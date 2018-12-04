@@ -1,5 +1,7 @@
 package org.anstreth.torrent.tracker;
 
+import org.anstreth.torrent.tracker.repository.InMemoryFileSourcesRepository;
+import org.anstreth.torrent.tracker.repository.PersistentFileInfoRepository;
 import org.anstreth.torrent.tracker.request.serialization.ListRequestDeserializer;
 import org.anstreth.torrent.tracker.request.serialization.SourcesRequestDeserializer;
 import org.anstreth.torrent.tracker.request.serialization.UpdateRequestDeserializer;
@@ -10,16 +12,25 @@ import org.anstreth.torrent.tracker.response.serialization.UpdateResponseSeriali
 import org.anstreth.torrent.tracker.response.serialization.UploadResponseSerializer;
 
 import java.io.IOException;
+import java.nio.file.*;
 
 import static org.anstreth.torrent.tracker.request.TrackerRequestMarker.*;
 import static org.anstreth.torrent.tracker.request.TrackerRequestMarker.UPDATE_REQUEST;
 
 public class Main {
     private static final int SERVER_PORT = 8081;
+    private static final Path FILE_INFO_STORAGE = Paths.get("tracker.files");
 
     public static void main(String[] args) throws IOException {
+        if (Files.exists(FILE_INFO_STORAGE)) {
+            Files.createFile(FILE_INFO_STORAGE);
+        }
+
         TrackerServer trackerServer = new TrackerServer(SERVER_PORT);
-        TrackerController trackerController = new FilePersistentTrackerController(null, null);
+        TrackerController trackerController = new FilePersistentTrackerController(
+            new PersistentFileInfoRepository(FILE_INFO_STORAGE),
+            new InMemoryFileSourcesRepository()
+        );
 
         trackerServer.registerMessageHandler(
             LIST_REQUEST,

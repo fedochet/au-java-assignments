@@ -20,7 +20,7 @@ public class PersistentFileInfoRepository implements FileInfoRepository {
     private final Path persistenceFile;
     private final AtomicInteger counter;
 
-    PersistentFileInfoRepository(Path persistenceFile) {
+    public PersistentFileInfoRepository(Path persistenceFile) {
         this.persistenceFile = persistenceFile;
         OptionalInt maxPreviousId = getAllFiles().stream().mapToInt(FileInfo::getId).max();
         counter = new AtomicInteger(maxPreviousId.orElse(0) + 1);
