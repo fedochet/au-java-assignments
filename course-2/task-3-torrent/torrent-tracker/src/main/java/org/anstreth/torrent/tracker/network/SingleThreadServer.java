@@ -1,6 +1,8 @@
 package org.anstreth.torrent.tracker.network;
 
 import org.anstreth.torrent.serialization.Deserializer;
+import org.anstreth.torrent.serialization.ReflectiveDeserializerFabric;
+import org.anstreth.torrent.serialization.ReflectiveSerializer;
 import org.anstreth.torrent.serialization.Serializer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -72,27 +74,23 @@ public class SingleThreadServer implements NetworkServer {
 
     @Override
     public <T, M> void registerMessageHandler(byte routeMarker,
-                                              Deserializer<T> deserializer,
-                                              Function<T, M> handler,
-                                              Serializer<M> serializer) {
-        registerRequestHandler(
-            routeMarker,
-            deserializer,
-            handler.compose(Request::getBody),
-            serializer
-        );
+                                              Class<T> requestClass,
+                                              Function<T, M> handler) {
+        registerRequestHandler(routeMarker, requestClass, handler.compose(Request::getBody));
     }
 
     @Override
     public <T, M> void registerRequestHandler(byte routeMarker,
-                                              Deserializer<T> deserializer,
-                                              Function<Request<T>, M> handler,
-                                              Serializer<M> serializer) {
+                                              Class<T> requestClass,
+                                              Function<Request<T>, M> handler) {
         if (handlers.containsKey(routeMarker)) {
             throw new IllegalArgumentException(
                 "Handler for " + routeMarker + " marker is already present!"
             );
         }
+
+        Serializer<Object> serializer = new ReflectiveSerializer();
+        Deserializer<T> deserializer = ReflectiveDeserializerFabric.createForClass(requestClass);
 
         handlers.put(routeMarker, socket -> {
             log.debug("Handling request at {} from {}", routeMarker, socket.getInetAddress());

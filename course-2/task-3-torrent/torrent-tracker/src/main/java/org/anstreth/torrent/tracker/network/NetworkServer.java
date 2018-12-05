@@ -7,14 +7,12 @@ import java.util.function.Function;
 
 public interface NetworkServer {
     <T, M> void registerMessageHandler(byte routeMarker,
-                                       Deserializer<T> deserializer,
-                                       Function<T, M> handler,
-                                       Serializer<M> serializer);
+                                       Class<T> requestClass,
+                                       Function<T, M> handler);
 
     <T, M> void registerRequestHandler(byte routeMarker,
-                                       Deserializer<T> deserializer,
-                                       Function<Request<T>, M> handler,
-                                       Serializer<M> serializer);
+                                       Class<T> requestClass,
+                                       Function<Request<T>, M> handler);
 
     void run();
 }

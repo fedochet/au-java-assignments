@@ -6,15 +6,9 @@ import org.anstreth.torrent.tracker.request.ListRequest;
 import org.anstreth.torrent.tracker.request.SourcesRequest;
 import org.anstreth.torrent.tracker.request.TrackerRequestMarker;
 import org.anstreth.torrent.tracker.request.UploadRequest;
-import org.anstreth.torrent.tracker.request.serialization.ListRequestSerializer;
-import org.anstreth.torrent.tracker.request.serialization.SourcesRequestDeserializer;
-import org.anstreth.torrent.tracker.request.serialization.SourcesRequestSerializer;
-import org.anstreth.torrent.tracker.request.serialization.UploadRequestSerializer;
 import org.anstreth.torrent.tracker.response.ListResponse;
 import org.anstreth.torrent.tracker.response.SourcesResponse;
 import org.anstreth.torrent.tracker.response.UploadResponse;
-import org.anstreth.torrent.tracker.response.serialization.ListResponseDeserializer;
-import org.anstreth.torrent.tracker.response.serialization.UploadResponseDeserializer;
 
 import java.io.IOException;
 import java.util.Scanner;
@@ -22,15 +16,6 @@ import java.util.Scanner;
 public class ClientMain {
     public static void main(String[] args) throws IOException {
         NetworkClient client = new NetworkClientImpl("localhost", 8081);
-
-        client.addSerializer(UploadRequest.class, new UploadRequestSerializer());
-        client.addDeserializer(UploadResponse.class, new UploadResponseDeserializer());
-
-        client.addSerializer(SourcesRequest.class, new SourcesRequestSerializer());
-        client.addDeserializer(SourcesRequest.class, new SourcesRequestDeserializer());
-
-        client.addSerializer(ListRequest.class, new ListRequestSerializer());
-        client.addDeserializer(ListResponse.class, new ListResponseDeserializer());
 
         Scanner scanner = new Scanner(System.in);
         while (true) {
@@ -53,7 +38,6 @@ public class ClientMain {
                     handleSourcesCommand(client, id);
                     break;
                 }
-
             }
         }
     }
