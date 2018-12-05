@@ -3,6 +3,7 @@ package org.anstreth.torrent.serialization;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.*;
 import java.util.*;
 
@@ -31,41 +32,23 @@ public class ReflectiveDeserializerFabric {
         fieldDeserializers.put(String.class, DataInput::readUTF);
     }
 
-
     public static <T> Deserializer<T> createForClass(Class<T> clazz) {
+        if (hasCostomDeserializer(clazz)) {
+            Deserializer<?> deserializer = createCustomDeserializer(clazz);
+            return stream -> clazz.cast(deserializer.deserialize(stream));
+        }
+
+        if (fieldDeserializers.containsKey(clazz)) {
+            DataDeserializer deserializer = fieldDeserializers.get(clazz);
+            return stream -> clazz.cast(deserializer.deserialize(stream));
+        }
+
+        Field[] fields = clazz.getDeclaredFields();
+        Class<?>[] fieldClasses = Arrays.stream(fields).map(Field::getType).toArray(Class[]::new);
+        Constructor<T> declaredConstructor = getAllFieldsConstructor(clazz, fieldClasses);
+
         return stream -> {
-            DataInputStream dataOutputStream = SerializationUtils.getDataInputStream(stream);
-
-            DeserializeWith deserializeWith = clazz.getDeclaredAnnotation(DeserializeWith.class);
-            if (deserializeWith != null) {
-                Deserializer<?> deserializer;
-                try {
-                    deserializer = deserializeWith.value().newInstance();
-                } catch (InstantiationException | IllegalAccessException e) {
-                    throw new IllegalArgumentException(
-                        "Deserializer class " + deserializeWith.value() + " cannot be instantiated"
-                    );
-                }
-
-                return clazz.cast(deserializer.deserialize(dataOutputStream));
-            }
-
-            if (fieldDeserializers.containsKey(clazz)) {
-                return clazz.cast(fieldDeserializers.get(clazz).deserialize(dataOutputStream));
-            }
-
-            Field[] fields = clazz.getDeclaredFields();
-            Class<?>[] fieldClasses = Arrays.stream(fields).map(Field::getType).toArray(Class[]::new);
-            Constructor<T> declaredConstructor;
-
-            try {
-                declaredConstructor = clazz.getDeclaredConstructor(fieldClasses);
-            } catch (NoSuchMethodException e) {
-                throw new IllegalArgumentException("No constructor from all field on class " + clazz);
-            }
-
-            List<Object> arguments = deserializeFields(fields, dataOutputStream);
-
+            List<Object> arguments = deserializeFields(fields, stream);
             try {
                 return declaredConstructor.newInstance(arguments.toArray());
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
@@ -74,26 +57,50 @@ public class ReflectiveDeserializerFabric {
         };
     }
 
-    private static List<Object> deserializeFields(Field[] fields, DataInputStream dataOutputStream) throws IOException {
+    private static <T> Deserializer<?> createCustomDeserializer(Class<T> clazz) {
+        DeserializeWith deserializeWith = clazz.getDeclaredAnnotation(DeserializeWith.class);
+        try {
+            return deserializeWith.value().newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new IllegalArgumentException(
+                "Deserializer class " + deserializeWith.value() + " cannot be instantiated"
+            );
+        }
+
+    }
+
+    private static <T> boolean hasCostomDeserializer(Class<T> clazz) {
+        return clazz.isAnnotationPresent(DeserializeWith.class);
+    }
+
+    private static <T> Constructor<T> getAllFieldsConstructor(Class<T> clazz, Class<?>[] fieldClasses) {
+        try {
+            return clazz.getDeclaredConstructor(fieldClasses);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalArgumentException("No constructor from all field on class " + clazz);
+        }
+    }
+
+    private static List<Object> deserializeFields(Field[] fields, InputStream inputStream) throws IOException {
         List<Object> arguments = new ArrayList<>();
 
         for (Field field : fields) {
             DataDeserializer fieldDeserializer = fieldDeserializers.get(field.getType());
             if (fieldDeserializer != null) {
-                Object object = fieldDeserializer.deserialize(dataOutputStream);
+                Object object = fieldDeserializer.deserialize(inputStream);
                 arguments.add(object);
             } else if (field.getType().isAssignableFrom(List.class)) {
-                arguments.add(deserializeList(field, dataOutputStream));
+                arguments.add(deserializeList(field, inputStream));
             } else {
                 Deserializer<?> deserializer = createForClass(field.getType());
-                arguments.add(deserializer.deserialize(dataOutputStream));
+                arguments.add(deserializer.deserialize(inputStream));
             }
         }
 
         return arguments;
     }
 
-    private static List<?> deserializeList(Field field, DataInputStream dataOutputStream) throws IOException {
+    private static List<?> deserializeList(Field field, InputStream dataOutputStream) throws IOException {
         ParameterizedType genericType = (ParameterizedType) field.getGenericType();
         Type listParameterType = genericType.getActualTypeArguments()[0];
         Class<?> parameterClass = findClass(listParameterType.getTypeName());
@@ -114,6 +121,10 @@ public class ReflectiveDeserializerFabric {
 
     @FunctionalInterface
     private interface DataDeserializer {
+        default Object deserialize(InputStream stream) throws IOException {
+            return deserialize(SerializationUtils.getDataInputStream(stream));
+        }
+
         Object deserialize(DataInputStream stream) throws IOException;
     }
 }
