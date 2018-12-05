@@ -1,4 +1,4 @@
-package org.anstreth.torrent.tracker.network;
+package org.anstreth.torrent.network;
 
 import org.anstreth.torrent.serialization.Deserializer;
 import org.anstreth.torrent.serialization.ReflectiveDeserializerFabric;

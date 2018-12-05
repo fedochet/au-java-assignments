@@ -2,4 +2,5 @@ rootProject.name = 'task-3-torrent'
 include 'torrent-client'
 include 'torrent-tracker'
 include 'torrent-requests'
+include 'torrent-networking'
 

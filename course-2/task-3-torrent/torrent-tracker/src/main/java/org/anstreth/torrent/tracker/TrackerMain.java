@@ -1,7 +1,7 @@
 package org.anstreth.torrent.tracker;
 
-import org.anstreth.torrent.tracker.network.NetworkServer;
-import org.anstreth.torrent.tracker.network.SingleThreadServer;
+import org.anstreth.torrent.network.NetworkServer;
+import org.anstreth.torrent.network.SingleThreadServer;
 import org.anstreth.torrent.tracker.repository.InMemoryFileSourcesRepository;
 import org.anstreth.torrent.tracker.repository.PersistentFileInfoRepository;
 import org.anstreth.torrent.tracker.request.ListRequest;

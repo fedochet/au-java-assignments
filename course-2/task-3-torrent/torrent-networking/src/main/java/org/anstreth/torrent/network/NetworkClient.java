@@ -1,4 +1,4 @@
-package org.anstreth.torrent.client.network;
+package org.anstreth.torrent.network;
 
 import java.io.IOException;
 

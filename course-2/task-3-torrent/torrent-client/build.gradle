@@ -14,5 +14,6 @@ repositories {
 }
 
 dependencies {
+    compile project(':torrent-networking')
     compile project(':torrent-requests')
 }

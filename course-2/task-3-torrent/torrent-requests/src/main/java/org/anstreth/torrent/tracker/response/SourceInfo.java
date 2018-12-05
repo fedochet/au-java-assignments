@@ -25,4 +25,12 @@ public class SourceInfo {
     public short getPort() {
         return port;
     }
+
+    @Override
+    public String toString() {
+        return "SourceInfo{" +
+            "address=" + address +
+            ", port=" + port +
+            '}';
+    }
 }

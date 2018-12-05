@@ -1,7 +1,7 @@
 package org.anstreth.torrent.client;
 
-import org.anstreth.torrent.client.network.NetworkClient;
-import org.anstreth.torrent.client.network.NetworkClientImpl;
+import org.anstreth.torrent.network.NetworkClient;
+import org.anstreth.torrent.network.NetworkClientImpl;
 import org.anstreth.torrent.tracker.request.*;
 import org.anstreth.torrent.tracker.response.ListResponse;
 import org.anstreth.torrent.tracker.response.SourcesResponse;

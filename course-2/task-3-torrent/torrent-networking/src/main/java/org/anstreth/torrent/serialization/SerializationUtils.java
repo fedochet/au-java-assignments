@@ -24,7 +24,7 @@ public class SerializationUtils {
         return new DataOutputStream(out);
     }
 
-    public static <T> void serializeList(List<T> list,
+    static <T> void serializeList(List<T> list,
                                          Serializer<T> serializer,
                                          OutputStream stream) throws IOException {
         DataOutputStream dataOutputStream = getDataOutputStream(stream);
@@ -34,7 +34,7 @@ public class SerializationUtils {
         }
     }
 
-    public static <T> List<T> deserializeList(Deserializer<T> deserializer,
+    static <T> List<T> deserializeList(Deserializer<T> deserializer,
                                               InputStream inputStream) throws IOException {
         DataInputStream dataInputStream = getDataInputStream(inputStream);
         int size = dataInputStream.readInt();

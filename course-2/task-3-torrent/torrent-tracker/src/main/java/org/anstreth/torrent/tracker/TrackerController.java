@@ -1,6 +1,6 @@
 package org.anstreth.torrent.tracker;
 
-import org.anstreth.torrent.tracker.network.Request;
+import org.anstreth.torrent.network.Request;
 import org.anstreth.torrent.tracker.request.ListRequest;
 import org.anstreth.torrent.tracker.request.SourcesRequest;
 import org.anstreth.torrent.tracker.request.UpdateRequest;

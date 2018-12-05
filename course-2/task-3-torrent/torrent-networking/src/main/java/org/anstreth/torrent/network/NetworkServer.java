@@ -1,4 +1,4 @@
-package org.anstreth.torrent.tracker.network;
+package org.anstreth.torrent.network;
 
 import java.util.function.Function;
 
