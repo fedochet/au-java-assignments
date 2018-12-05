@@ -45,5 +45,4 @@ public class SerializationUtils {
 
         return objects;
     }
-
 }
