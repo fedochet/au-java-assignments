@@ -17,17 +17,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 
-public class TrackerServer {
-    private final static Logger log = LoggerFactory.getLogger(TrackerServer.class);
+public class SingleThreadServer implements NetworkServer {
+    private final static Logger log = LoggerFactory.getLogger(SingleThreadServer.class);
 
     private final ServerSocket serverSocket;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Map<Byte, RequestHandler> handlers = new ConcurrentHashMap<>();
 
-    public TrackerServer(int port) throws IOException {
+    public SingleThreadServer(int port) throws IOException {
         serverSocket = new ServerSocket(port);
     }
 
+    @Override
     public void run() {
         log.debug(
             "Server started at address {}, port {}",
@@ -69,30 +70,32 @@ public class TrackerServer {
         handlers.get(requestType).handle(socket);
     }
 
-    public <T, M> void registerMessageHandler(byte messageMarker,
+    @Override
+    public <T, M> void registerMessageHandler(byte routeMarker,
                                               Deserializer<T> deserializer,
                                               Function<T, M> handler,
                                               Serializer<M> serializer) {
         registerRequestHandler(
-            messageMarker,
+            routeMarker,
             deserializer,
             handler.compose(Request::getBody),
             serializer
         );
     }
 
-    public <T, M> void registerRequestHandler(byte messageMarker,
+    @Override
+    public <T, M> void registerRequestHandler(byte routeMarker,
                                               Deserializer<T> deserializer,
                                               Function<Request<T>, M> handler,
                                               Serializer<M> serializer) {
-        if (handlers.containsKey(messageMarker)) {
+        if (handlers.containsKey(routeMarker)) {
             throw new IllegalArgumentException(
-                "Handler for " + messageMarker + " marker is already present!"
+                "Handler for " + routeMarker + " marker is already present!"
             );
         }
 
-        handlers.put(messageMarker, socket -> {
-            log.debug("Handling request at {} from {}", messageMarker, socket.getInetAddress());
+        handlers.put(routeMarker, socket -> {
+            log.debug("Handling request at {} from {}", routeMarker, socket.getInetAddress());
 
             T request = deserializer.deserialize(socket.getInputStream());
 
@@ -103,7 +106,7 @@ public class TrackerServer {
                 String errorMessage = String.format(
                     "Runtime error while handling request %s at %d from %s",
                     request,
-                    messageMarker,
+                    routeMarker,
                     socket.getInetAddress()
                 );
 
@@ -114,7 +117,7 @@ public class TrackerServer {
             serializer.serialize(response, socket.getOutputStream());
 
             log.debug(
-                "Request at {} from {} is successfully handled!", messageMarker, socket.getInetAddress()
+                "Request at {} from {} is successfully handled!", routeMarker, socket.getInetAddress()
             );
         });
     }
