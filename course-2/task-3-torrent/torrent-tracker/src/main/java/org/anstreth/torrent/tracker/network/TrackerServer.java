@@ -1,8 +1,7 @@
-package org.anstreth.torrent.tracker;
+package org.anstreth.torrent.tracker.network;
 
 import org.anstreth.torrent.serialization.Deserializer;
 import org.anstreth.torrent.serialization.Serializer;
-import org.anstreth.torrent.tracker.network.Request;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,18 +17,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 
-class TrackerServer {
+public class TrackerServer {
     private final static Logger log = LoggerFactory.getLogger(TrackerServer.class);
 
     private final ServerSocket serverSocket;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Map<Byte, RequestHandler> handlers = new ConcurrentHashMap<>();
 
-    TrackerServer(int port) throws IOException {
+    public TrackerServer(int port) throws IOException {
         serverSocket = new ServerSocket(port);
     }
 
-    void run() {
+    public void run() {
         log.debug(
             "Server started at address {}, port {}",
             serverSocket.getInetAddress(),
@@ -70,10 +69,10 @@ class TrackerServer {
         handlers.get(requestType).handle(socket);
     }
 
-    <T, M> void registerMessageHandler(byte messageMarker,
-                                       Deserializer<T> deserializer,
-                                       Function<T, M> handler,
-                                       Serializer<M> serializer) {
+    public <T, M> void registerMessageHandler(byte messageMarker,
+                                              Deserializer<T> deserializer,
+                                              Function<T, M> handler,
+                                              Serializer<M> serializer) {
         registerRequestHandler(
             messageMarker,
             deserializer,
@@ -82,10 +81,10 @@ class TrackerServer {
         );
     }
 
-    <T, M> void registerRequestHandler(byte messageMarker,
-                                       Deserializer<T> deserializer,
-                                       Function<Request<T>, M> handler,
-                                       Serializer<M> serializer) {
+    public <T, M> void registerRequestHandler(byte messageMarker,
+                                              Deserializer<T> deserializer,
+                                              Function<Request<T>, M> handler,
+                                              Serializer<M> serializer) {
         if (handlers.containsKey(messageMarker)) {
             throw new IllegalArgumentException(
                 "Handler for " + messageMarker + " marker is already present!"
