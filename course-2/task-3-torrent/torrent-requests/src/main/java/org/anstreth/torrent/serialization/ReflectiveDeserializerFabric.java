@@ -36,6 +36,20 @@ public class ReflectiveDeserializerFabric {
         return stream -> {
             DataInputStream dataOutputStream = SerializationUtils.getDataInputStream(stream);
 
+            DeserializeWith deserializeWith = clazz.getDeclaredAnnotation(DeserializeWith.class);
+            if (deserializeWith != null) {
+                Deserializer<?> deserializer;
+                try {
+                    deserializer = deserializeWith.value().newInstance();
+                } catch (InstantiationException | IllegalAccessException e) {
+                    throw new IllegalArgumentException(
+                        "Deserializer class " + deserializeWith.value() + " cannot be instantiated"
+                    );
+                }
+
+                return clazz.cast(deserializer.deserialize(dataOutputStream));
+            }
+
             if (fieldDeserializers.containsKey(clazz)) {
                 return clazz.cast(fieldDeserializers.get(clazz).deserialize(dataOutputStream));
             }

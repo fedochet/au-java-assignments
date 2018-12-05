@@ -2,15 +2,14 @@ package org.anstreth.torrent.client;
 
 import org.anstreth.torrent.client.network.NetworkClient;
 import org.anstreth.torrent.client.network.NetworkClientImpl;
-import org.anstreth.torrent.tracker.request.ListRequest;
-import org.anstreth.torrent.tracker.request.SourcesRequest;
-import org.anstreth.torrent.tracker.request.TrackerRequestMarker;
-import org.anstreth.torrent.tracker.request.UploadRequest;
+import org.anstreth.torrent.tracker.request.*;
 import org.anstreth.torrent.tracker.response.ListResponse;
 import org.anstreth.torrent.tracker.response.SourcesResponse;
+import org.anstreth.torrent.tracker.response.UpdateResponse;
 import org.anstreth.torrent.tracker.response.UploadResponse;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Scanner;
 
 public class ClientMain {
@@ -18,7 +17,7 @@ public class ClientMain {
         NetworkClient client = new NetworkClientImpl("localhost", 8081);
 
         Scanner scanner = new Scanner(System.in);
-        while (true) {
+        while (scanner.hasNext()) {
             String command = scanner.next();
 
             switch (command) {
@@ -48,6 +47,8 @@ public class ClientMain {
             new SourcesRequest(id),
             SourcesResponse.class
         );
+
+        sourcesResponse.getAddresses().forEach(System.out::println);
     }
 
     private static void handleAddCommand(NetworkClient client, String fileName, long size) throws IOException {
@@ -56,7 +57,14 @@ public class ClientMain {
             new UploadRequest(fileName, size),
             UploadResponse.class
         );
+
         System.out.printf("File with id %s is added\n", deserialize.getFileId());
+
+        client.makeRequest(
+            TrackerRequestMarker.UPDATE_REQUEST,
+            new UpdateRequest((short) 100, Collections.singletonList(deserialize.getFileId())),
+            UpdateResponse.class
+        );
     }
 
     private static void handleListCommand(NetworkClient client) throws IOException {

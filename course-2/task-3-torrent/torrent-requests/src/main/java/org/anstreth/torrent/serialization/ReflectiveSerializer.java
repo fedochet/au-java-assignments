@@ -44,6 +44,20 @@ public class ReflectiveSerializer implements Serializer<Object> {
     public void serialize(Object value, OutputStream stream) throws IOException {
         DataOutputStream dataOutputStream = SerializationUtils.getDataOutputStream(stream);
 
+        SerializeWith annotation = value.getClass().getDeclaredAnnotation(SerializeWith.class);
+        if (annotation != null) {
+            try {
+                @SuppressWarnings("unchecked")
+                Serializer<Object> serializer = (Serializer<Object>) annotation.value().newInstance();
+                serializer.serialize(value, dataOutputStream);
+                return;
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new IllegalArgumentException(
+                    "Serializer class " + annotation.value() + " cannot be instantiated"
+                );
+            }
+        }
+
         if (fieldSerializers.containsKey(value.getClass())) {
             fieldSerializers.get(value.getClass()).serialize(value, dataOutputStream);
             return;
