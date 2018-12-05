@@ -34,4 +34,13 @@ public class FileInfo {
             size == fileInfo.size &&
             Objects.equals(name, fileInfo.name);
     }
+
+    @Override
+    public String toString() {
+        return "FileInfo{" +
+            "id=" + id +
+            ", name='" + name + '\'' +
+            ", size=" + size +
+            '}';
+    }
 }

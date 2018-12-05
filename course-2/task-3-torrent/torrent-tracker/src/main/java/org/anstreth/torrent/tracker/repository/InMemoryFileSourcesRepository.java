@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+// FIXME: 05.12.18 remove keys from sources after some time
 public class InMemoryFileSourcesRepository implements FileSourcesRepository {
     private final Map<Integer, List<SourceInfo>> sources = new ConcurrentHashMap<>();
 
