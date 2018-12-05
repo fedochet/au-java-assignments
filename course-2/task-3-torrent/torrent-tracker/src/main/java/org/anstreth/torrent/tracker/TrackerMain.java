@@ -58,6 +58,6 @@ public class TrackerMain {
             new UpdateRequestDeserializer(), trackerController::handle, new UpdateResponseSerializer()
         );
 
-        trackerServer.start();
+        trackerServer.run();
     }
 }
