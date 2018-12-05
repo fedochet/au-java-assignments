@@ -1,13 +1,13 @@
 package org.anstreth.torrent.tracker.response;
 
 public class UpdateResponse {
-    private final boolean status;
+    private final boolean successful;
 
-    public UpdateResponse(boolean status) {
-        this.status = status;
+    public UpdateResponse(boolean successful) {
+        this.successful = successful;
     }
 
-    public boolean isStatus() {
-        return status;
+    public boolean isSuccessful() {
+        return successful;
     }
 }
