@@ -36,6 +36,10 @@ public class ReflectiveDeserializerFabric {
         return stream -> {
             DataInputStream dataOutputStream = SerializationUtils.getDataInputStream(stream);
 
+            if (fieldDeserializers.containsKey(clazz)) {
+                return clazz.cast(fieldDeserializers.get(clazz).deserialize(dataOutputStream));
+            }
+
             Field[] fields = clazz.getDeclaredFields();
             Class<?>[] fieldClasses = Arrays.stream(fields).map(Field::getType).toArray(Class[]::new);
             Constructor<T> declaredConstructor;
