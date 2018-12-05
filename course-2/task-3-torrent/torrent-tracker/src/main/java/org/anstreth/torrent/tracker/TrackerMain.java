@@ -10,6 +10,8 @@ import org.anstreth.torrent.tracker.response.serialization.ListResponseSerialize
 import org.anstreth.torrent.tracker.response.serialization.SourcesResponseSerializer;
 import org.anstreth.torrent.tracker.response.serialization.UpdateResponseSerializer;
 import org.anstreth.torrent.tracker.response.serialization.UploadResponseSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -17,12 +19,16 @@ import java.nio.file.*;
 import static org.anstreth.torrent.tracker.request.TrackerRequestMarker.*;
 import static org.anstreth.torrent.tracker.request.TrackerRequestMarker.UPDATE_REQUEST;
 
-public class Main {
+public class TrackerMain {
+    private static final Logger log = LoggerFactory.getLogger(TrackerMain.class);
+
     private static final int SERVER_PORT = 8081;
     private static final Path FILE_INFO_STORAGE = Paths.get("tracker.files");
 
     public static void main(String[] args) throws IOException {
-        if (Files.exists(FILE_INFO_STORAGE)) {
+        log.debug("Starting torrent tracker server.");
+
+        if (!Files.exists(FILE_INFO_STORAGE)) {
             Files.createFile(FILE_INFO_STORAGE);
         }
 

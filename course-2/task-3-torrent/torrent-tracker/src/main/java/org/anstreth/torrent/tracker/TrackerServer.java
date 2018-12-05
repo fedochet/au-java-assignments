@@ -38,14 +38,20 @@ class TrackerServer {
         registerShutdownHook();
 
         executor.execute(() -> {
-            try (Socket accept = serverSocket.accept()) {
-                try {
-                    handleRequest(accept);
+            while (!serverSocket.isClosed()) {
+                try (Socket accept = serverSocket.accept()) {
+                    try {
+                        handleRequest(accept);
+                    } catch (IOException e) {
+                        log.error("Error reading data from " + accept, e);
+                    }
                 } catch (IOException e) {
-                    log.error("Error reading data from " + accept, e);
+                    if (serverSocket.isClosed()) {
+                        log.debug("Server socket has been closed");
+                    } else {
+                        log.error("Error accepting connection, something is wrong with server socket");
+                    }
                 }
-            } catch (IOException e) {
-                log.error("Error accepting connection, something is wrong with server socket. Stopping server");
             }
         });
     }
@@ -53,6 +59,11 @@ class TrackerServer {
     private void registerShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.debug("Server is shutting down...");
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                log.error("Error shutting down server socket", e);
+            }
             executor.shutdown();
             log.debug("Server is shut down.");
         }, "Server shutdown hook"));
@@ -87,17 +98,30 @@ class TrackerServer {
         }
 
         handlers.put(messageMarker, socket -> {
+            log.debug("Handling request at {} from {}", messageMarker, socket.getInetAddress());
+
             T request = deserializer.deserialize(socket.getInputStream());
 
             M response;
             try {
                 response = handler.apply(new RequestImpl<>(socket.getInetAddress(), request));
             } catch (RuntimeException e) {
-                log.error("Runtime error while handling request " + request, e);
+                String errorMessage = String.format(
+                    "Runtime error while handling request %s at %d from %s",
+                    request,
+                    messageMarker,
+                    socket.getInetAddress()
+                );
+
+                log.error(errorMessage, e);
                 return;
             }
 
             serializer.serialize(response, socket.getOutputStream());
+
+            log.debug(
+                "Request at {} from {} is successfully handled!", messageMarker, socket.getInetAddress()
+            );
         });
     }
 
