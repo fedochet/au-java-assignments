@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 // FIXME: 05.12.18 remove keys from sources after some time
+// FIXME: 06.12.18 disallow adding many same resources for the same file
 public class InMemoryFileSourcesRepository implements FileSourcesRepository {
     private final Map<Integer, List<SourceInfo>> sources = new ConcurrentHashMap<>();
 
