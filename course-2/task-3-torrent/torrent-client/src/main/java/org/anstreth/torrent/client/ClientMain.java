@@ -12,7 +12,12 @@ import java.util.Scanner;
 
 public class ClientMain {
     public static void main(String[] args) throws IOException {
-        TrackerClient client = new TrackerClientImpl(InetAddress.getByName("localhost"), (short) 8081);
+        if (args.length == 0) {
+            System.out.println("Usage: <port>");
+        }
+
+        ClientArgs clientArgs = parseArgs(args);
+        TrackerClient client = new TrackerClientImpl(clientArgs.trackerAddress, clientArgs.trackerPort);
 
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNext()) {
@@ -48,6 +53,19 @@ public class ClientMain {
                     return;
             }
         }
+    }
+
+    private static ClientArgs parseArgs(String[] args) {
+        ClientArgs clientArgs = new ClientArgs();
+        clientArgs.clientPort = Short.parseShort(args[0]);
+        return clientArgs;
+    }
+
+    private static class ClientArgs {
+        short clientPort;
+        InetAddress trackerAddress = InetAddress.getLoopbackAddress();
+        short trackerPort = 8081;
+
     }
 
 }
