@@ -2,22 +2,39 @@ package org.anstreth.torrent.client;
 
 import org.anstreth.torrent.client.network.TrackerClient;
 import org.anstreth.torrent.client.network.TrackerClientImpl;
+import org.anstreth.torrent.client.storage.LocalFilesManager;
+import org.anstreth.torrent.client.storage.LocalFilesManagerImpl;
 import org.anstreth.torrent.tracker.response.FileInfo;
 import org.anstreth.torrent.tracker.response.SourceInfo;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
 
 public class ClientMain {
+
+    private static final long PART_SIZE = 10 * 1024 * 1024; // 10 mb
+
+    private static final Path CURRENT_DIR = Paths.get(System.getProperty("user.dir"));
+    private static final Path DOWNLOADS = CURRENT_DIR.resolve("downloads");
+
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
             System.out.println("Usage: <port>");
+            System.exit(1);
+        }
+
+        if (Files.notExists(DOWNLOADS)) {
+            Files.createDirectories(DOWNLOADS);
         }
 
         ClientArgs clientArgs = parseArgs(args);
         TrackerClient client = new TrackerClientImpl(clientArgs.trackerAddress, clientArgs.trackerPort);
+        LocalFilesManager localFilesManager = new LocalFilesManagerImpl(PART_SIZE, DOWNLOADS);
 
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNext()) {
@@ -31,13 +48,24 @@ public class ClientMain {
                     break;
                 }
 
-                case "add": {
-                    String fileName = scanner.next();
-                    long size = scanner.nextLong();
+                case "upload": {
+                    String fileLocation = scanner.next();
+                    Path file = Paths.get(fileLocation);
 
-                    int fileId = client.addFile(fileName, size);
+                    int fileId = client.addFile(file.getFileName().toString(), Files.size(file));
 
-                    System.out.printf("File with id %s is added\n", fileId);
+                    System.out.println(String.format("File with id %d is added", fileId));
+                    break;
+                }
+
+                case "download": {
+                    int fileId = scanner.nextInt();
+                    List<FileInfo> files = client.listFiles();
+                    FileInfo fileInfo = files.stream().filter(file -> file.getId() == fileId).findFirst().orElseThrow(() ->
+                        new IllegalArgumentException("File with id " + fileId + " does not exist!")
+                    );
+
+                    localFilesManager.allocateFile(fileInfo.getId(), fileInfo.getName(), fileInfo.getSize());
                     break;
                 }
 
@@ -49,8 +77,16 @@ public class ClientMain {
                     break;
                 }
 
+                case "stats": {
+                    localFilesManager.listFiles().forEach(System.out::println);
+                    break;
+                }
+
                 case "exit":
                     return;
+
+                default:
+                    System.err.println(String.format("Unexpected command %s", command));
             }
         }
     }
