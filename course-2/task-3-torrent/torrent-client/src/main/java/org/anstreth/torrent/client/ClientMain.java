@@ -65,7 +65,6 @@ public class ClientMain {
         short clientPort;
         InetAddress trackerAddress = InetAddress.getLoopbackAddress();
         short trackerPort = 8081;
-
     }
 
 }
