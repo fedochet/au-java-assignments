@@ -15,9 +15,10 @@ public class FileStorageDetailsFabric {
     }
 
     public FileStorageDetails completedFileDetails(int fileId, Path path) throws IOException {
-        BitSet bitSet = new BitSet(numberOfParts(path));
+        int numberOfParts = numberOfParts(path);
+        BitSet bitSet = new BitSet(numberOfParts);
         bitSet.flip(0, bitSet.size());
-        return new FileStorageDetails(fileId, path, bitSet);
+        return new FileStorageDetails(fileId, path, numberOfParts, bitSet);
     }
 
     public FileStorageDetails newFileDetails(int fileId, Path path) throws IOException {
@@ -28,7 +29,7 @@ public class FileStorageDetailsFabric {
         int numberOfParts = numberOfParts(path);
         BitSet bitSet = new BitSet(numberOfParts);
         readyParts.forEach(bitSet::set);
-        return new FileStorageDetails(fileId, path, bitSet);
+        return new FileStorageDetails(fileId, path, numberOfParts, bitSet);
     }
 
     private int numberOfParts(Path path) throws IOException {

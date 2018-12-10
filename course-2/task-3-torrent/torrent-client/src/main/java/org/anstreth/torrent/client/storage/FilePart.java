@@ -6,7 +6,7 @@ public class FilePart {
     private final int fileId;
     private final int number;
 
-    FilePart(int fileId, int number) {
+    public FilePart(int fileId, int number) {
         this.fileId = fileId;
         this.number = number;
     }
@@ -31,5 +31,13 @@ public class FilePart {
     @Override
     public int hashCode() {
         return Objects.hash(fileId, number);
+    }
+
+    @Override
+    public String toString() {
+        return "FilePart{" +
+            "fileId=" + fileId +
+            ", number=" + number +
+            '}';
     }
 }
