@@ -17,7 +17,7 @@ public interface LocalFilesManager {
      */
     void allocateFile(int fileId, String name, long size) throws IOException;
     List<FileStorageDetails> listFiles() throws IOException;
-    List<FilePart> getParts(int fileId) throws IOException;
+    List<FilePart> getAvailableParts(int fileId) throws IOException;
     InputStream openForReading(FilePart part) throws IOException;
     OutputStream openForWriting(FilePart part) throws IOException;
     void finishFilePart(FilePart part) throws IOException;

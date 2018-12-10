@@ -9,6 +9,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,7 +20,7 @@ import java.util.Set;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-public class Downloader {
+public class Downloader implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(Downloader.class);
 
     private final Set<FilePart> currentDownloads = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -36,7 +37,8 @@ public class Downloader {
         updater.scheduleAtFixedRate(this::update, 0, updatePeriod, TimeUnit.MILLISECONDS);
     }
 
-    public void shutdown() {
+    @Override
+    public void close() {
         downloader.shutdown();
         updater.shutdown();
     }

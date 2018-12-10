@@ -11,7 +11,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.util.List;
 
-import static org.anstreth.torrent.client.request.ClientRequestMarkers.GET_REQUEST;
+import static org.anstreth.torrent.client.request.ClientRequestMarkers.GET_MARKER;
 import static org.anstreth.torrent.client.request.ClientRequestMarkers.STAT_MARKER;
 
 public class PeerClientImpl implements PeerClient {
@@ -34,6 +34,6 @@ public class PeerClientImpl implements PeerClient {
 
     @Override
     public InputStream getPart(int fileId, int partNumber) throws IOException {
-        return networkClient.makeRawRequest(GET_REQUEST, new GetRequest(fileId, partNumber));
+        return networkClient.makeRawRequest(GET_MARKER, new GetRequest(fileId, partNumber));
     }
 }

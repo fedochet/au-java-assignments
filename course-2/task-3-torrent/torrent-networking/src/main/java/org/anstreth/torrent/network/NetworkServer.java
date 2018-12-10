@@ -1,7 +1,6 @@
 package org.anstreth.torrent.network;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.function.Function;
 
 public interface NetworkServer extends Closeable {

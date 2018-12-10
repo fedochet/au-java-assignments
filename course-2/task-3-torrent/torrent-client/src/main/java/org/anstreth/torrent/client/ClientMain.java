@@ -1,6 +1,7 @@
 package org.anstreth.torrent.client;
 
 import org.anstreth.torrent.client.download.Downloader;
+import org.anstreth.torrent.client.network.PeerServer;
 import org.anstreth.torrent.client.network.TrackerClient;
 import org.anstreth.torrent.client.network.TrackerClientImpl;
 import org.anstreth.torrent.client.storage.LocalFilesManager;
@@ -19,7 +20,7 @@ import java.util.Scanner;
 
 public class ClientMain {
 
-    private static final long PART_SIZE = 10 * 1024 * 1024; // 10 mb
+    private static final long PART_SIZE = 1024 * 1024; // 1 mb
 
     private static final Path CURRENT_DIR = Paths.get(System.getProperty("user.dir"));
     private static final Path DOWNLOADS = CURRENT_DIR.resolve("downloads");
@@ -39,10 +40,11 @@ public class ClientMain {
         TrackerClient client = new TrackerClientImpl(clientArgs.trackerAddress, clientArgs.trackerPort);
         LocalFilesManager localFilesManager = new LocalFilesManagerImpl(PART_SIZE, DOWNLOADS);
 
-        Downloader downloader = new Downloader(client, localFilesManager, 10 * 1000);
-
         Scanner scanner = new Scanner(System.in);
-        try {
+
+        try (Downloader downloader = new Downloader(client, localFilesManager, 10 * 1000);
+             PeerServer server = new PeerServer(clientArgs.clientPort, localFilesManager)) {
+
             while (scanner.hasNext()) {
                 String command = scanner.next();
 
@@ -60,6 +62,7 @@ public class ClientMain {
 
                         int fileId = client.addFile(file.getFileName().toString(), Files.size(file));
                         client.updateSources(clientArgs.clientPort, Collections.singletonList(fileId));
+                        localFilesManager.registerFile(fileId, file.toAbsolutePath());
 
                         System.out.println(String.format("File with id %d is added", fileId));
                         break;
@@ -96,8 +99,6 @@ public class ClientMain {
                         System.err.println(String.format("Unexpected command %s", command));
                 }
             }
-        } finally {
-            downloader.shutdown();
         }
     }
 

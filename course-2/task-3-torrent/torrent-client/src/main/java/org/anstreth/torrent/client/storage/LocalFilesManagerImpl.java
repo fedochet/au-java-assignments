@@ -55,7 +55,7 @@ public class LocalFilesManagerImpl implements LocalFilesManager {
     }
 
     @Override
-    public List<FilePart> getParts(int fileId) throws IOException {
+    public List<FilePart> getAvailableParts(int fileId) throws IOException {
         return files.get(fileId).availableParts();
     }
 
