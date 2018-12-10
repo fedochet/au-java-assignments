@@ -23,7 +23,7 @@ public class SingleThreadServer implements NetworkServer {
     private final static Logger log = LoggerFactory.getLogger(SingleThreadServer.class);
 
     private final ServerSocket serverSocket;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newCachedThreadPool();
     private final Map<Byte, RequestHandler> handlers = new ConcurrentHashMap<>();
 
     public SingleThreadServer(int port) throws IOException {
@@ -31,16 +31,27 @@ public class SingleThreadServer implements NetworkServer {
     }
 
     @Override
-    public void run() {
+    public void start() {
+        executor.submit(this::runServer);
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            serverSocket.close();
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    private void runServer() {
         log.debug(
             "Server started at address {}, port {}",
             serverSocket.getInetAddress(),
             serverSocket.getLocalPort()
         );
 
-        registerShutdownHook();
-
-        while (true) {
+        while (!Thread.interrupted()) {
             try {
                 Socket clientSocket = serverSocket.accept();
                 executor.submit(getClientHandler(clientSocket));
@@ -118,19 +129,6 @@ public class SingleThreadServer implements NetworkServer {
                 "Request at {} from {} is successfully handled!", routeMarker, socket.getInetAddress()
             );
         });
-    }
-
-    private void registerShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.debug("Server is shutting down...");
-            try {
-                serverSocket.close();
-            } catch (IOException e) {
-                log.error("Error shutting down server socket", e);
-            }
-            executor.shutdown();
-            log.debug("Server is shut down.");
-        }, "Server shutdown hook"));
     }
 
     @FunctionalInterface

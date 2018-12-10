@@ -1,8 +1,10 @@
 package org.anstreth.torrent.network;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.function.Function;
 
-public interface NetworkServer {
+public interface NetworkServer extends Closeable {
     <T, M> void registerMessageHandler(byte routeMarker,
                                        Class<T> requestClass,
                                        Function<T, M> handler);
@@ -11,5 +13,5 @@ public interface NetworkServer {
                                        Class<T> requestClass,
                                        Function<Request<T>, M> handler);
 
-    void run();
+    void start();
 }

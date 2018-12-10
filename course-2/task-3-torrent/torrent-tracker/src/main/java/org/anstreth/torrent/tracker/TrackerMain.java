@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Scanner;
 
 import static org.anstreth.torrent.tracker.request.TrackerRequestMarker.*;
 
@@ -31,17 +32,22 @@ public class TrackerMain {
             Files.createFile(FILE_INFO_STORAGE);
         }
 
-        NetworkServer trackerServer = new SingleThreadServer(SERVER_PORT);
         TrackerController trackerController = new TrackerControllerImpl(
             new PersistentFileInfoRepository(FILE_INFO_STORAGE),
             new InMemoryFileSourcesRepository()
         );
 
-        trackerServer.registerMessageHandler(LIST_REQUEST, ListRequest.class, trackerController::handle);
-        trackerServer.registerMessageHandler(UPLOAD_REQUEST, UploadRequest.class, trackerController::handle);
-        trackerServer.registerMessageHandler(SOURCES_REQUEST, SourcesRequest.class, trackerController::handle);
-        trackerServer.registerRequestHandler(UPDATE_REQUEST, UpdateRequest.class, trackerController::handle);
+        try (NetworkServer trackerServer = new SingleThreadServer(SERVER_PORT)) {
+            trackerServer.registerMessageHandler(LIST_REQUEST, ListRequest.class, trackerController::handle);
+            trackerServer.registerMessageHandler(UPLOAD_REQUEST, UploadRequest.class, trackerController::handle);
+            trackerServer.registerMessageHandler(SOURCES_REQUEST, SourcesRequest.class, trackerController::handle);
+            trackerServer.registerRequestHandler(UPDATE_REQUEST, UpdateRequest.class, trackerController::handle);
 
-        trackerServer.run();
+            trackerServer.start();
+
+            System.out.println("Press any key to stop server");
+            int ignored = System.in.read();
+            System.exit(0);
+        }
     }
 }
