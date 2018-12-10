@@ -1,9 +1,10 @@
 package org.anstreth.torrent.client.storage;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class FileStorageDetails {
     private final int fileId;
@@ -21,17 +22,20 @@ public class FileStorageDetails {
     }
 
     public List<FilePart> availableParts() {
-        List<FilePart> objects = new ArrayList<>(partsStatuses.size());
-        for (int i = 0; i < partsStatuses.size(); i++) {
-            if (partsStatuses.get(i)) {
-                objects.add(new FilePart(fileId, i));
-            }
-        }
-
-        return objects;
+        return IntStream.range(0, partsStatuses.size())
+            .filter(partsStatuses::get)
+            .mapToObj(i -> new FilePart(fileId, i))
+            .collect(Collectors.toList());
     }
 
-    public void finishPart(int number) {
+    public List<FilePart> missingParts() {
+        return IntStream.range(0, partsStatuses.size())
+            .filter(i -> !partsStatuses.get(i))
+            .mapToObj(i -> new FilePart(fileId, i))
+            .collect(Collectors.toList());
+    }
+
+    void finishPart(int number) {
         partsStatuses.set(number);
     }
 

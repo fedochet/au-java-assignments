@@ -11,6 +11,7 @@ public interface LocalFilesManager {
      * Registers already existing file.
      */
     void registerFile(int fileId, Path path) throws IOException;
+
     /**
      * Allocates file with required size, but marks all its parts as empty.
      */
