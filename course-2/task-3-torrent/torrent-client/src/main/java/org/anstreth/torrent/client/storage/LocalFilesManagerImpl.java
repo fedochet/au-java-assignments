@@ -74,7 +74,7 @@ public class LocalFilesManagerImpl implements LocalFilesManager {
     public OutputStream openForWriting(FilePart part) throws IOException {
         Path path = files.get(part.getFileId()).getFile();
         FileChannel channel = FileChannel
-            .open(path, StandardOpenOption.READ)
+            .open(path, StandardOpenOption.WRITE)
             .position(partSize * part.getNumber());
 
         // FIXME check that no more than partSize is written
