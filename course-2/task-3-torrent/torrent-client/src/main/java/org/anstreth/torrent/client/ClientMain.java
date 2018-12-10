@@ -19,11 +19,11 @@ import java.util.List;
 import java.util.Scanner;
 
 public class ClientMain {
-
     private static final long PART_SIZE = 1024 * 1024; // 1 mb
 
     private static final Path CURRENT_DIR = Paths.get(System.getProperty("user.dir"));
     private static final Path DOWNLOADS = CURRENT_DIR.resolve("downloads");
+    private static final int SERVER_PORT = 8081;
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
@@ -111,7 +111,7 @@ public class ClientMain {
     private static class ClientArgs {
         short clientPort;
         InetAddress trackerAddress = InetAddress.getLoopbackAddress();
-        short trackerPort = 8081;
+        short trackerPort = SERVER_PORT;
     }
 
 }
