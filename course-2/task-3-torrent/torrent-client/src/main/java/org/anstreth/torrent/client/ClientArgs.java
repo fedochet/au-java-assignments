@@ -5,8 +5,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 class ClientArgs {
-    private static final int UPDATE_PERIOD = 10 * 1000; // 10 seconds
-    private static final long PART_SIZE = 1024 * 1024; // 1 mb
+    private static final long DOWNLOADER_UPDATE_PERIOD = 10 * 1000; // 10 seconds
+    private static final long SOURCES_UPDATE_PERIOD = 10 * 1000; // 10 seconds
+
+    private static final long PART_SIZE = 10; // 1024 * 1024; // 1 mb
 
     private static final Path CURRENT_DIR = Paths.get(System.getProperty("user.dir"));
     private static final Path DOWNLOADS = CURRENT_DIR.resolve("downloads");
@@ -19,7 +21,8 @@ class ClientArgs {
     long partSize = PART_SIZE;
     Path downloadsDir = DOWNLOADS.toAbsolutePath();
 
-    int updatePeriodMs = UPDATE_PERIOD;
+    long downloaderUpdatePeriodMs = DOWNLOADER_UPDATE_PERIOD;
+    long sourcesUpdatePeriodMs = SOURCES_UPDATE_PERIOD;
 
     static ClientArgs parseArgs(String[] args) {
         ClientArgs clientArgs = new ClientArgs();

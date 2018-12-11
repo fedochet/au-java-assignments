@@ -1,6 +1,7 @@
 package org.anstreth.torrent.client;
 
 import org.anstreth.torrent.client.download.Downloader;
+import org.anstreth.torrent.client.download.SourcesUpdater;
 import org.anstreth.torrent.client.network.PeerServer;
 import org.anstreth.torrent.client.network.TrackerClient;
 import org.anstreth.torrent.client.storage.LocalFilesManager;
@@ -14,7 +15,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -24,24 +24,24 @@ public class ClientCli implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(ClientCli.class);
 
     private final TrackerClient trackerClient;
-    private final ClientArgs clientArgs;
     private final LocalFilesManager localFilesManager;
     private final Downloader downloader;
+    private final SourcesUpdater updater;
     private final PeerServer server;
 
-    ClientCli(ClientArgs clientArgs) throws IOException {
-        this.clientArgs = clientArgs;
-        trackerClient = new TrackerClient(clientArgs.trackerAddress, clientArgs.trackerPort);
-        localFilesManager = new LocalFilesManagerImpl(clientArgs.partSize, clientArgs.downloadsDir);
-        downloader = new Downloader(trackerClient, localFilesManager, clientArgs.updatePeriodMs);
-        server = new PeerServer(clientArgs.clientPort, localFilesManager);
+    ClientCli(ClientArgs args) throws IOException {
+        trackerClient = new TrackerClient(args.trackerAddress, args.trackerPort);
+        localFilesManager = new LocalFilesManagerImpl(args.partSize, args.downloadsDir);
+        downloader = new Downloader(trackerClient, localFilesManager, args.downloaderUpdatePeriodMs);
+        server = new PeerServer(args.clientPort, localFilesManager);
+        updater = SourcesUpdater.startUpdater(trackerClient, localFilesManager, args.clientPort, args.sourcesUpdatePeriodMs);
     }
 
     @Override
     public void close() throws IOException {
-        try (Downloader d = downloader; PeerServer s = server) {
-            logger.info("Shutting down client CLI...");
-        }
+        updater.close();
+        server.close();
+        downloader.close();
 
         logger.info("CLI is shut down");
     }
@@ -52,7 +52,7 @@ public class ClientCli implements Closeable {
 
     int uploadFile(Path file) throws IOException {
         int fileId = trackerClient.addFile(file.getFileName().toString(), Files.size(file));
-        trackerClient.updateSources(clientArgs.clientPort, Collections.singletonList(fileId));
+        updater.updateSources();
         localFilesManager.registerFile(fileId, file.toAbsolutePath());
 
         return fileId;
