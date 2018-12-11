@@ -22,7 +22,7 @@ public class Downloader implements Closeable {
 
     private final Set<FilePart> currentDownloads = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-    private final ExecutorService downloader = Executors.newCachedThreadPool();
+    private final ExecutorService partsDownloader = Executors.newCachedThreadPool();
     private final ScheduledExecutorService updater = Executors.newScheduledThreadPool(1);
 
     private final LocalFilesManager localFilesManager;
@@ -36,7 +36,7 @@ public class Downloader implements Closeable {
 
     @Override
     public void close() {
-        downloader.shutdown();
+        partsDownloader.shutdown();
         updater.shutdown();
     }
 
@@ -63,7 +63,7 @@ public class Downloader implements Closeable {
         try {
             List<SourceInfo> sources = trackerClient.getSources(part.getFileId());
             if (!sources.isEmpty()) {
-                downloader.submit(new DownloadJob(part, sources));
+                partsDownloader.submit(new DownloadJob(part, sources));
             }
         } catch (IOException e) {
             logger.error("Cannot fetch information about part " + part, e);
