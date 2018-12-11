@@ -60,8 +60,7 @@ public class ClientCli implements Closeable {
 
     void downloadFile(int fileId) throws IOException {
         if (localFilesManager.fileIsPresent(fileId)) {
-            System.out.println("File with id " + fileId + " is already present as local file!");
-            return;
+            throw new IllegalArgumentException("File with id " + fileId + " is already present as local file!");
         }
 
         List<FileInfo> files = trackerClient.listFiles();

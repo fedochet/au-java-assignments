@@ -31,40 +31,60 @@ public class ClientMain {
 
                 switch (command) {
                     case "list": {
-                        List<FileInfo> deserialize = client.listFiles();
-                        deserialize.forEach(System.out::println);
+                        List<FileInfo> files = client.listFiles();
+
+                        System.out.println("Totally files on tracker: " + files.size());
+                        for (FileInfo file : files) {
+                            System.out.printf(
+                                "\t%s (id: %d, size: %d bytes)%n", file.getName(), file.getId(), file.getSize()
+                            );
+                        }
+
                         break;
                     }
 
                     case "upload": {
                         String fileLocation = scanner.next();
                         Path file = Paths.get(fileLocation);
+                        int fileId = client.uploadFile(file.toAbsolutePath());
 
-                        int fileId = client.uploadFile(file);
+                        System.out.printf(
+                            "File %s is successfully added to tracker with id %d!%n", file, fileId
+                        );
 
-                        System.out.println(String.format("File with id %d is added", fileId));
                         break;
                     }
 
                     case "download": {
                         int fileId = scanner.nextInt();
 
-                        client.downloadFile(fileId);
+                        try {
+                            client.downloadFile(fileId);
+                            System.out.printf("File with id %d will be dawnloaded eventually...%n", fileId);
+                        } catch (IllegalArgumentException e) {
+                            System.err.printf("Cannot start downloading %d: %s%n", fileId, e.getMessage());
+                        }
+
                         break;
                     }
 
                     case "sources": {
-                        int id = scanner.nextInt();
-                        List<SourceInfo> sourcesResponse = client.getFileSources(id);
-                        sourcesResponse.forEach(System.out::println);
+                        int fileId = scanner.nextInt();
+                        List<SourceInfo> sources = client.getFileSources(fileId);
+
+                        System.out.printf("There are %d sources for file with id %d.%n", sources.size(), fileId);
+                        for (SourceInfo source : sources) {
+                            System.out.printf("\tAddress: %s, port: %d%n", source.getAddress(), source.getPort());
+                        }
                         break;
                     }
 
                     case "exit":
+                        System.out.println("Quitting client");
                         return;
 
                     default:
-                        System.err.println(String.format("Unexpected command %s", command));
+                        System.err.printf("Unexpected command %s%n", command);
                 }
             }
         } catch (Exception e) {
