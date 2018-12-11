@@ -46,14 +46,14 @@ public class FilePartsRepositoryImplTest {
         assertThat(file.getFileId()).isEqualTo(0);
         assertThat(file.getFile()).isEqualTo(pathOne);
         assertThat(file.getNumberOfParts()).isEqualTo(10);
-        assertThat(file.getReadyParts()).isEmpty();
+        assertThat(file.getReadyPartsIndexes()).isEmpty();
     }
 
     @Test
     public void file_can_be_added_with_all_parts() throws IOException {
         repository.addFileWithAllParts(0, pathOne, 3);
 
-        assertThat(repository.getFile(0).getReadyParts())
+        assertThat(repository.getFile(0).getReadyPartsIndexes())
             .containsExactlyInAnyOrder(0, 1, 2);
     }
 
@@ -74,7 +74,7 @@ public class FilePartsRepositoryImplTest {
         repository.savePart(0, 3);
         repository.savePart(0, 5);
 
-        assertThat(repository.getFile(0).getReadyParts())
+        assertThat(repository.getFile(0).getReadyPartsIndexes())
             .containsExactlyInAnyOrder(0, 3, 5);
     }
 

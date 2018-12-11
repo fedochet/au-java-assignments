@@ -49,7 +49,7 @@ public class Downloader implements Closeable {
 
         try {
             notDownloadedParts = localFilesManager.listFiles().stream()
-                .flatMap(fileStorageDetails -> fileStorageDetails.missingParts().stream())
+                .flatMap(fileStorageDetails -> fileStorageDetails.getMissingParts().stream())
                 .filter(part -> !currentDownloads.contains(part))
                 .collect(Collectors.toSet());
         } catch (IOException e) {

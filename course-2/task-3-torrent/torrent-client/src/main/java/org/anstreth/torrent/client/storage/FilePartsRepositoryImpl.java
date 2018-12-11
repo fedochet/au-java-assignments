@@ -70,7 +70,7 @@ public class FilePartsRepositoryImpl implements FilePartsRepository {
             ));
         }
 
-        Set<Integer> updatedParts = new HashSet<>(parts.getReadyParts());
+        Set<Integer> updatedParts = new HashSet<>(parts.getReadyPartsIndexes());
         if (!updatedParts.add(partNumber)) {
             throw new IllegalArgumentException(String.format("File %d already contains part %d", fileId, partNumber));
         }
@@ -95,7 +95,7 @@ public class FilePartsRepositoryImpl implements FilePartsRepository {
         try (DataOutputStream dataOutputStream = new DataOutputStream(Files.newOutputStream(file))) {
             dataOutputStream.writeInt(parts.getNumberOfParts());
             dataOutputStream.writeUTF(parts.getFile().toString());
-            writePartsInfo(dataOutputStream, parts.getReadyParts());
+            writePartsInfo(dataOutputStream, parts.getReadyPartsIndexes());
         }
     }
 
