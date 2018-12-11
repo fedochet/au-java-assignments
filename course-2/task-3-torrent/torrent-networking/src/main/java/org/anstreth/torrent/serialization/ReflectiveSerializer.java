@@ -67,6 +67,8 @@ public class ReflectiveSerializer implements Serializer<Object> {
         for (Field field : fields) {
             if (primitivesFieldSerializers.containsKey(field.getType())) {
                 primitivesFieldSerializers.get(field.getType()).serializeWithAccess(value, field, dataOutputStream);
+            } else if (field.getType().isAssignableFrom(List.class)) {
+                fieldSerializers.get(List.class).serializeWithAccess(value, field, dataOutputStream);
             } else if (fieldSerializers.containsKey(field.getType())) {
                 fieldSerializers.get(field.getType()).serializeWithAccess(value, field, dataOutputStream);
             } else {

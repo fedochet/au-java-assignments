@@ -46,8 +46,8 @@ public class LocalFilesManagerImpl implements LocalFilesManager {
     }
 
     @Override
-    public Set<FilePart> getAvailableParts(int fileId) throws IOException {
-        return partsRepository.getFile(fileId).getReadyParts();
+    public FilePartsDetails getFileDetails(int fileId) throws IOException {
+        return partsRepository.getFile(fileId);
     }
 
     @Override
@@ -75,6 +75,11 @@ public class LocalFilesManagerImpl implements LocalFilesManager {
     @Override
     public void finishFilePart(FilePart part) throws IOException {
         partsRepository.savePart(part.getFileId(), part.getNumber());
+    }
+
+    @Override
+    public boolean fileIsPresent(int fileId) throws IOException {
+        return listFiles().stream().anyMatch(p -> p.getFileId() == fileId);
     }
 
     private int numberOfParts(Path path) throws IOException {

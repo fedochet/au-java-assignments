@@ -87,13 +87,13 @@ public class Downloader implements Closeable {
         @Override
         public void run() {
             try {
-                tryToDownload();
+                downloadPart();
             } finally {
                 currentDownloads.remove(part);
             }
         }
 
-        private void tryToDownload() {
+        private void downloadPart() {
             Optional<SourceInfo> possibleSource = selectSource(sources);
 
             if (!possibleSource.isPresent()) {

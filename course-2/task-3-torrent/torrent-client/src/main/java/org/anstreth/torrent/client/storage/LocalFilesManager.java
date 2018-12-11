@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
 
 public interface LocalFilesManager {
     /**
@@ -18,8 +17,9 @@ public interface LocalFilesManager {
      */
     void allocateFile(int fileId, String name, long size) throws IOException;
     List<FilePartsDetails> listFiles() throws IOException;
-    Set<FilePart> getAvailableParts(int fileId) throws IOException;
+    FilePartsDetails getFileDetails(int fileId) throws IOException;
     InputStream openForReading(FilePart part) throws IOException;
     OutputStream openForWriting(FilePart part) throws IOException;
     void finishFilePart(FilePart part) throws IOException;
+    boolean fileIsPresent(int fileId) throws IOException;
 }

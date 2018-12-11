@@ -70,6 +70,12 @@ public class ClientMain {
 
                     case "download": {
                         int fileId = scanner.nextInt();
+
+                        if (localFilesManager.fileIsPresent(fileId)) {
+                            System.out.println("File with id " + fileId + " is already present as local file!");
+                            break;
+                        }
+
                         List<FileInfo> files = client.listFiles();
                         FileInfo fileInfo = files.stream().filter(file -> file.getId() == fileId).findFirst().orElseThrow(() ->
                             new IllegalArgumentException("File with id " + fileId + " does not exist!")
