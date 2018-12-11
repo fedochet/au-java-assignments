@@ -50,28 +50,24 @@ public class Downloader implements Closeable {
                 .filter(part -> !currentDownloads.contains(part))
                 .collect(Collectors.toSet());
         } catch (IOException e) {
-            logger.error("Cannot fetch inforation about file parts", e);
+            logger.error("Cannot fetch information about file parts", e);
             return;
         }
 
         logger.info("Parts to download: {}", notDownloadedParts.size());
+        notDownloadedParts.forEach(this::submitJob);
+        logger.info("Update is finished");
+    }
 
-        for (FilePart part : notDownloadedParts) {
-            List<SourceInfo> sources;
-
-            try {
-                sources = trackerClient.getSources(part.getFileId());
-            } catch (IOException e) {
-                logger.error("Cannot fetch information about part " + part, e);
-                break;
-            }
-
+    private void submitJob(FilePart part) {
+        try {
+            List<SourceInfo> sources = trackerClient.getSources(part.getFileId());
             if (!sources.isEmpty()) {
                 downloader.submit(new DownloadJob(part, sources));
             }
+        } catch (IOException e) {
+            logger.error("Cannot fetch information about part " + part, e);
         }
-
-        logger.info("Update is finished");
     }
 
     private class DownloadJob implements Runnable {
@@ -108,7 +104,6 @@ public class Downloader implements Closeable {
                 IOUtils.copy(inputStream, outputStream);
             } catch (IOException e) {
                 logger.error(String.format("Cannot download part %s from %s!", part, sources), e);
-
                 return;
             }
 

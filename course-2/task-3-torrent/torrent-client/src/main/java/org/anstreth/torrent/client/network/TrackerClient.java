@@ -12,14 +12,14 @@ import java.util.List;
 import static org.anstreth.torrent.tracker.request.TrackerRequestMarker.*;
 
 public class TrackerClient {
-    private final NetworkClient netwrokClient;
+    private final NetworkClient networkClient;
 
     public TrackerClient(InetAddress address, short port) {
-        netwrokClient = new NetworkClientImpl(address, port);
+        networkClient = new NetworkClientImpl(address, port);
     }
 
     public int addFile(String file, long size) throws IOException {
-        UploadResponse response = netwrokClient.makeRequest(
+        UploadResponse response = networkClient.makeRequest(
             UPLOAD_REQUEST,
             new UploadRequest(file, size),
             UploadResponse.class
@@ -29,7 +29,7 @@ public class TrackerClient {
     }
 
     public List<FileInfo> listFiles() throws IOException {
-        ListResponse response = netwrokClient.makeRequest(
+        ListResponse response = networkClient.makeRequest(
             LIST_REQUEST,
             new ListRequest(),
             ListResponse.class
@@ -39,7 +39,7 @@ public class TrackerClient {
     }
 
     public List<SourceInfo> getSources(int fileId) throws IOException {
-        SourcesResponse response = netwrokClient.makeRequest(
+        SourcesResponse response = networkClient.makeRequest(
             SOURCES_REQUEST,
             new SourcesRequest(fileId),
             SourcesResponse.class
@@ -49,7 +49,7 @@ public class TrackerClient {
     }
 
     public boolean updateSources(short port, List<Integer> fileIds) throws IOException {
-        UpdateResponse response = netwrokClient.makeRequest(
+        UpdateResponse response = networkClient.makeRequest(
             UPDATE_REQUEST,
             new UpdateRequest(port, fileIds),
             UpdateResponse.class
