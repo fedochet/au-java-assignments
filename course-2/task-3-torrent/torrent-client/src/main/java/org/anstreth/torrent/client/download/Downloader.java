@@ -1,5 +1,6 @@
 package org.anstreth.torrent.client.download;
 
+import org.anstreth.torrent.client.network.PeerClient;
 import org.anstreth.torrent.client.network.PeerClientImpl;
 import org.anstreth.torrent.client.network.TrackerClient;
 import org.anstreth.torrent.client.storage.FilePart;
@@ -13,10 +14,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
@@ -69,11 +67,9 @@ public class Downloader implements Closeable {
                 break;
             }
 
-            Optional<SourceInfo> randomElement = getRandomElement(sources);
-            currentDownloads.add(part);
-            randomElement.ifPresent(sourceInfo ->
-                downloader.submit(new DownloadJob(part, sourceInfo))
-            );
+            if (!sources.isEmpty()) {
+                downloader.submit(new DownloadJob(part, sources));
+            }
         }
 
         logger.info("Update is finished");
@@ -81,25 +77,38 @@ public class Downloader implements Closeable {
 
     private class DownloadJob implements Runnable {
         private final FilePart part;
-        private final SourceInfo sourceInfo;
-        private final PeerClientImpl client;
+        private final List<SourceInfo> sources;
 
-        private DownloadJob(FilePart part, SourceInfo sourceInfo) {
+        private DownloadJob(FilePart part, List<SourceInfo> sources) {
             this.part = part;
-            this.sourceInfo = sourceInfo;
-            client = new PeerClientImpl(sourceInfo.getAddress(), sourceInfo.getPort());
+            this.sources = sources;
         }
 
         @Override
         public void run() {
+            try {
+                tryToDownload();
+            } finally {
+                currentDownloads.remove(part);
+            }
+        }
+
+        private void tryToDownload() {
+            Optional<SourceInfo> possibleSource = selectSource(sources);
+
+            if (!possibleSource.isPresent()) {
+                logger.info("No sources for " + part);
+                return;
+            }
+
+            SourceInfo source = possibleSource.get();
+            PeerClient client = new PeerClientImpl(source.getAddress(), source.getPort());
+
             try (OutputStream outputStream = localFilesManager.openForWriting(part);
                  InputStream inputStream = client.getPart(part.getFileId(), part.getNumber())) {
                 IOUtils.copy(inputStream, outputStream);
             } catch (IOException e) {
-                logger.error(String.format("Cannot download part %s from %s!", part, sourceInfo), e);
-
-                currentDownloads.remove(part);
-                logger.info("Part " + part + " will be available for downloading");
+                logger.error(String.format("Cannot download part %s from %s!", part, sources), e);
 
                 return;
             }
@@ -108,16 +117,23 @@ public class Downloader implements Closeable {
                 localFilesManager.finishFilePart(part);
             } catch (IOException e) {
                 logger.error(String.format("Cannot mark part %s as finished", part), e);
-            } finally {
-                currentDownloads.remove(part);
             }
         }
-    }
 
-    private <T> Optional<T> getRandomElement(List<T> sources) {
-        if (sources.isEmpty()) return Optional.empty();
+        private Optional<SourceInfo> selectSource(List<SourceInfo> sources) {
+            for (SourceInfo source : sources) {
+                PeerClient peerClient = new PeerClientImpl(source.getAddress(), source.getPort());
+                try {
+                    List<Integer> parts = peerClient.getParts(part.getFileId());
+                    if (parts.contains(part.getNumber())) {
+                        return Optional.of(source);
+                    }
+                } catch (IOException e) {
+                    logger.error("Error connecting to client with source = " + source);
+                }
+            }
 
-        int index = ThreadLocalRandom.current().nextInt(sources.size()) % sources.size();
-        return Optional.of(sources.get(index));
+            return Optional.empty();
+        }
     }
 }
