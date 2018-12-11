@@ -7,6 +7,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -15,9 +16,15 @@ public class FilePartsRepositoryImplTest {
     public TemporaryFolder folder = new TemporaryFolder();
     private FilePartsRepository repository;
 
+    Path pathOne, pathTwo, pathThree;
+
     @Before
     public void setUp() throws IOException {
         repository = new FilePartsRepositoryImpl(folder.newFolder(".meta").toPath());
+
+        pathOne = folder.newFile("path1").toPath();
+        pathTwo = folder.newFile("path2").toPath();
+        pathThree = folder.newFile("path3").toPath();
     }
 
     @Test
@@ -32,18 +39,19 @@ public class FilePartsRepositoryImplTest {
 
     @Test
     public void file_can_be_added_and_then_looked_up() throws IOException {
-        repository.addFileWithoutParts(0, 10);
+        repository.addFileWithoutParts(0, pathOne, 10);
 
         FilePartsDetails file = repository.getFile(0);
 
         assertThat(file.getFileId()).isEqualTo(0);
+        assertThat(file.getFile()).isEqualTo(pathOne);
         assertThat(file.getNumberOfParts()).isEqualTo(10);
         assertThat(file.getReadyParts()).isEmpty();
     }
 
     @Test
     public void file_can_be_added_with_all_parts() throws IOException {
-        repository.addFileWithAllParts(0, 3);
+        repository.addFileWithAllParts(0, pathOne, 3);
 
         assertThat(repository.getFile(0).getReadyParts())
             .containsExactlyInAnyOrder(0, 1, 2);
@@ -51,16 +59,16 @@ public class FilePartsRepositoryImplTest {
 
     @Test
     public void file_cannot_be_created_with_less_than_one_part() {
-        assertThatThrownBy(() -> repository.addFileWithoutParts(123, -1))
+        assertThatThrownBy(() -> repository.addFileWithoutParts(123, pathOne, -1))
             .isInstanceOf(IllegalArgumentException.class);
 
-        assertThatThrownBy(() -> repository.addFileWithoutParts(123, 0))
+        assertThatThrownBy(() -> repository.addFileWithoutParts(123, pathOne, 0))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void after_saving_part_it_appears_in_readyParts() throws IOException {
-        repository.addFileWithoutParts(0, 10);
+        repository.addFileWithoutParts(0, pathOne, 10);
 
         repository.savePart(0, 0);
         repository.savePart(0, 3);
@@ -72,7 +80,7 @@ public class FilePartsRepositoryImplTest {
 
     @Test
     public void saving_same_part_twice_results_in_exception() throws IOException {
-        repository.addFileWithoutParts(0, 10);
+        repository.addFileWithoutParts(0, pathOne, 10);
 
         repository.savePart(0, 1);
 
@@ -82,7 +90,7 @@ public class FilePartsRepositoryImplTest {
 
     @Test
     public void saving_part_outside_of_parts_interval_results_in_exception() throws IOException {
-        repository.addFileWithoutParts(0, 10);
+        repository.addFileWithoutParts(0, pathOne, 10);
 
         assertThatThrownBy(() -> repository.savePart(0, 10))
             .isInstanceOf(IllegalArgumentException.class);
@@ -93,9 +101,9 @@ public class FilePartsRepositoryImplTest {
 
     @Test
     public void listFiles_returns_added_files() throws IOException {
-        repository.addFileWithoutParts(1, 10);
-        repository.addFileWithoutParts(2, 20);
-        repository.addFileWithoutParts(3, 30);
+        repository.addFileWithoutParts(1, pathOne, 10);
+        repository.addFileWithoutParts(2, pathTwo, 20);
+        repository.addFileWithoutParts(3, pathThree, 30);
 
         assertThat(repository.listFiles())
             .extracting("fileId")
@@ -104,5 +112,9 @@ public class FilePartsRepositoryImplTest {
         assertThat(repository.listFiles())
             .extracting("numberOfParts")
             .containsExactly(10, 20, 30);
+
+        assertThat(repository.listFiles())
+            .extracting("file")
+            .containsExactly(pathOne, pathTwo, pathThree);
     }
 }

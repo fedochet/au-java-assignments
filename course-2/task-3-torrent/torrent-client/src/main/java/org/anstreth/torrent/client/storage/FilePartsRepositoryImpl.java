@@ -3,6 +3,7 @@ package org.anstreth.torrent.client.storage;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,7 +34,7 @@ public class FilePartsRepositoryImpl implements FilePartsRepository {
     }
 
     @Override
-    public void addFileWithAllParts(int fileId, int numberOfParts) throws IOException {
+    public void addFileWithAllParts(int fileId, Path path, int numberOfParts) throws IOException {
         assertPartsAreCorrect(numberOfParts);
 
         Set<Integer> parts = new HashSet<>();
@@ -41,14 +42,14 @@ public class FilePartsRepositoryImpl implements FilePartsRepository {
             parts.add(i);
         }
 
-        storeParts(new FilePartsDetails(fileId, numberOfParts, parts));
+        storeParts(new FilePartsDetails(fileId, path, numberOfParts, parts));
     }
 
     @Override
-    public void addFileWithoutParts(int fileId, int numberOfParts) throws IOException {
+    public void addFileWithoutParts(int fileId, Path path, int numberOfParts) throws IOException {
         assertPartsAreCorrect(numberOfParts);
 
-        storeParts(new FilePartsDetails(fileId, numberOfParts, emptySet()));
+        storeParts(new FilePartsDetails(fileId, path, numberOfParts, emptySet()));
     }
 
     @Override
@@ -76,6 +77,7 @@ public class FilePartsRepositoryImpl implements FilePartsRepository {
 
         FilePartsDetails updated = new FilePartsDetails(
             parts.getFileId(),
+            parts.getFile(),
             parts.getNumberOfParts(),
             updatedParts
         );
@@ -92,6 +94,7 @@ public class FilePartsRepositoryImpl implements FilePartsRepository {
         Path file = getPartsFile(parts.getFileId());
         try (DataOutputStream dataOutputStream = new DataOutputStream(Files.newOutputStream(file))) {
             dataOutputStream.writeInt(parts.getNumberOfParts());
+            dataOutputStream.writeUTF(parts.getFile().toString());
             writePartsInfo(dataOutputStream, parts.getReadyParts());
         }
     }
@@ -100,9 +103,10 @@ public class FilePartsRepositoryImpl implements FilePartsRepository {
         Path file = getPartsFile(fileId);
         try (DataInputStream inputStream = new DataInputStream(Files.newInputStream(file))) {
             int numberOfParts = inputStream.readInt();
+            Path absolutePath = Paths.get(inputStream.readUTF());
             Set<Integer> availableParts = readPartsInfo(inputStream);
 
-            return new FilePartsDetails(fileId, numberOfParts, availableParts);
+            return new FilePartsDetails(fileId, absolutePath, numberOfParts, availableParts);
         }
     }
 
