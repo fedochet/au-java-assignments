@@ -1,7 +1,6 @@
 package org.anstreth.torrent.client.download;
 
 import org.anstreth.torrent.client.network.PeerClient;
-import org.anstreth.torrent.client.network.PeerClientImpl;
 import org.anstreth.torrent.client.network.TrackerClient;
 import org.anstreth.torrent.client.storage.FilePart;
 import org.anstreth.torrent.client.storage.LocalFilesManager;
@@ -102,7 +101,7 @@ public class Downloader implements Closeable {
             }
 
             SourceInfo source = possibleSource.get();
-            PeerClient client = new PeerClientImpl(source.getAddress(), source.getPort());
+            PeerClient client = new PeerClient(source.getAddress(), source.getPort());
 
             try (OutputStream outputStream = localFilesManager.openForWriting(part);
                  InputStream inputStream = client.getPart(part.getFileId(), part.getNumber())) {
@@ -122,7 +121,7 @@ public class Downloader implements Closeable {
 
         private Optional<SourceInfo> selectSource(List<SourceInfo> sources) {
             for (SourceInfo source : sources) {
-                PeerClient peerClient = new PeerClientImpl(source.getAddress(), source.getPort());
+                PeerClient peerClient = new PeerClient(source.getAddress(), source.getPort());
                 try {
                     List<Integer> parts = peerClient.getParts(part.getFileId());
                     if (parts.contains(part.getNumber())) {

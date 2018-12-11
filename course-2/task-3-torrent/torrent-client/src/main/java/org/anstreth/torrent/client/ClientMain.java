@@ -3,7 +3,6 @@ package org.anstreth.torrent.client;
 import org.anstreth.torrent.client.download.Downloader;
 import org.anstreth.torrent.client.network.PeerServer;
 import org.anstreth.torrent.client.network.TrackerClient;
-import org.anstreth.torrent.client.network.TrackerClientImpl;
 import org.anstreth.torrent.client.storage.LocalFilesManager;
 import org.anstreth.torrent.client.storage.LocalFilesManagerImpl;
 import org.anstreth.torrent.tracker.response.FileInfo;
@@ -19,6 +18,7 @@ import java.util.List;
 import java.util.Scanner;
 
 public class ClientMain {
+    private static final int UPDATE_PERIOD = 10 * 1000; // 10 seconds
     private static final long PART_SIZE = 1024 * 1024; // 1 mb
 
     private static final Path CURRENT_DIR = Paths.get(System.getProperty("user.dir"));
@@ -37,12 +37,12 @@ public class ClientMain {
 
         ClientArgs clientArgs = parseArgs(args);
 
-        TrackerClient client = new TrackerClientImpl(clientArgs.trackerAddress, clientArgs.trackerPort);
+        TrackerClient client = new TrackerClient(clientArgs.trackerAddress, clientArgs.trackerPort);
         LocalFilesManager localFilesManager = new LocalFilesManagerImpl(PART_SIZE, DOWNLOADS);
 
         Scanner scanner = new Scanner(System.in);
 
-        try (Downloader downloader = new Downloader(client, localFilesManager, 10 * 1000);
+        try (Downloader downloader = new Downloader(client, localFilesManager, UPDATE_PERIOD);
              PeerServer server = new PeerServer(clientArgs.clientPort, localFilesManager)) {
 
             while (scanner.hasNext()) {

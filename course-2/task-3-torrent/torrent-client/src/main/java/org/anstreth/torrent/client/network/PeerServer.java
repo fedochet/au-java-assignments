@@ -29,6 +29,10 @@ import java.util.concurrent.Executors;
 public class PeerServer implements Closeable {
     private final static Logger log = LoggerFactory.getLogger(SingleThreadServer.class);
 
+    private static final ReflectiveSerializer reflectiveSerializer = new ReflectiveSerializer();
+    private static final Deserializer<StatRequest> statRequestDeserializer = ReflectiveDeserializerFabric.createForClass(StatRequest.class);
+    private static final Deserializer<GetRequest> getRequestDeserializer = ReflectiveDeserializerFabric.createForClass(GetRequest.class);
+
     private final ServerSocket serverSocket;
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
@@ -65,10 +69,6 @@ public class PeerServer implements Closeable {
 
         @Override
         public void run() {
-            ReflectiveSerializer reflectiveSerializer = new ReflectiveSerializer();
-            Deserializer<StatRequest> statRequestDeserializer = ReflectiveDeserializerFabric.createForClass(StatRequest.class);
-            Deserializer<GetRequest> getRequestDeserializer = ReflectiveDeserializerFabric.createForClass(GetRequest.class);
-
             try (Socket socket = clientSocket) {
                 DataInputStream inputStream = new DataInputStream(socket.getInputStream());
                 byte requestType = inputStream.readByte();
@@ -96,7 +96,7 @@ public class PeerServer implements Closeable {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Error during handling request from " + clientSocket, e);
             }
         }
     }
