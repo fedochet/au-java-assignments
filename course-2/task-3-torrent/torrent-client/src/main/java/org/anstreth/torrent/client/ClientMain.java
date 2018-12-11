@@ -11,24 +11,17 @@ import java.util.List;
 import java.util.Scanner;
 
 public class ClientMain {
-    public static final int UPDATE_PERIOD = 10 * 1000; // 10 seconds
-    public static final long PART_SIZE = 1024 * 1024; // 1 mb
-
-    public static final Path CURRENT_DIR = Paths.get(System.getProperty("user.dir"));
-    public static final Path DOWNLOADS = CURRENT_DIR.resolve("downloads");
-    public static final int SERVER_PORT = 8081;
-
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
             System.out.println("Usage: <port>");
             System.exit(1);
         }
 
-        if (Files.notExists(DOWNLOADS)) {
-            Files.createDirectories(DOWNLOADS);
-        }
+        ClientArgs clientArgs = ClientArgs.parseArgs(args);
 
-        ClientCli.ClientArgs clientArgs = ClientCli.parseArgs(args);
+        if (Files.notExists(clientArgs.downloadsDir)) {
+            Files.createDirectories(clientArgs.downloadsDir);
+        }
 
         Scanner scanner = new Scanner(System.in);
 

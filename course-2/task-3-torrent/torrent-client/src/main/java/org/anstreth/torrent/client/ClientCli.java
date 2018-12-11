@@ -12,13 +12,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-
-import static org.anstreth.torrent.client.ClientMain.*;
 
 /**
  * Class to start and coordinate all parts of client application.
@@ -35,8 +32,8 @@ public class ClientCli implements Closeable {
     ClientCli(ClientArgs clientArgs) throws IOException {
         this.clientArgs = clientArgs;
         trackerClient = new TrackerClient(clientArgs.trackerAddress, clientArgs.trackerPort);
-        localFilesManager = new LocalFilesManagerImpl(PART_SIZE, DOWNLOADS);
-        downloader = new Downloader(trackerClient, localFilesManager, UPDATE_PERIOD);
+        localFilesManager = new LocalFilesManagerImpl(clientArgs.partSize, clientArgs.downloadsDir);
+        downloader = new Downloader(trackerClient, localFilesManager, clientArgs.updatePeriodMs);
         server = new PeerServer(clientArgs.clientPort, localFilesManager);
     }
 
@@ -79,15 +76,4 @@ public class ClientCli implements Closeable {
         return trackerClient.getSources(id);
     }
 
-    static ClientArgs parseArgs(String[] args) {
-        ClientArgs clientArgs = new ClientArgs();
-        clientArgs.clientPort = Short.parseShort(args[0]);
-        return clientArgs;
-    }
-
-    static class ClientArgs {
-        short clientPort;
-        InetAddress trackerAddress = InetAddress.getLoopbackAddress();
-        short trackerPort = SERVER_PORT;
-    }
 }
