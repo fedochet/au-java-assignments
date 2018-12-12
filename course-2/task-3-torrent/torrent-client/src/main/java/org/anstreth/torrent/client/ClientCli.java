@@ -4,6 +4,7 @@ import org.anstreth.torrent.client.download.Downloader;
 import org.anstreth.torrent.client.download.SourcesUpdater;
 import org.anstreth.torrent.client.network.PeerServer;
 import org.anstreth.torrent.client.network.TrackerClient;
+import org.anstreth.torrent.client.storage.FilePartsDetails;
 import org.anstreth.torrent.client.storage.LocalFilesManager;
 import org.anstreth.torrent.client.storage.LocalFilesManagerImpl;
 import org.anstreth.torrent.tracker.response.FileInfo;
@@ -34,7 +35,7 @@ public class ClientCli implements Closeable {
         localFilesManager = new LocalFilesManagerImpl(args.partSize, args.downloadsDir);
         downloader = new Downloader(trackerClient, localFilesManager, args.downloaderUpdatePeriodMs);
         server = new PeerServer(args.clientPort, localFilesManager);
-        updater = SourcesUpdater.startUpdater(trackerClient, localFilesManager, args.clientPort, args.sourcesUpdatePeriodMs);
+        updater = new SourcesUpdater(trackerClient, localFilesManager, args.clientPort, args.sourcesUpdatePeriodMs);
     }
 
     @Override
@@ -75,4 +76,7 @@ public class ClientCli implements Closeable {
         return trackerClient.getSources(id);
     }
 
+    List<FilePartsDetails> listLocalFiles() throws IOException {
+        return localFilesManager.listFiles();
+    }
 }

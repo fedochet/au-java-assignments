@@ -8,7 +8,7 @@ class ClientArgs {
     private static final long DOWNLOADER_UPDATE_PERIOD = 10 * 1000; // 10 seconds
     private static final long SOURCES_UPDATE_PERIOD = 10 * 1000; // 10 seconds
 
-    private static final long PART_SIZE = 10; // 1024 * 1024; // 1 mb
+    private static final long PART_SIZE = 1024 * 1024; // 1 mb
 
     private static final Path CURRENT_DIR = Paths.get(System.getProperty("user.dir"));
     private static final Path DOWNLOADS = CURRENT_DIR.resolve("downloads");

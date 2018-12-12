@@ -18,20 +18,14 @@ public class SourcesUpdater implements AutoCloseable {
     private final ScheduledExecutorService updater = Executors.newScheduledThreadPool(1);
     private final TrackerClient trackerClient;
     private final short clientPort;
-    private final long updateRate;
 
     private LocalFilesManager localFileManager;
 
-    private SourcesUpdater(TrackerClient trackerClient, LocalFilesManager localFileManager, short clientPort, long updateRate) {
+    public SourcesUpdater(TrackerClient trackerClient, LocalFilesManager localFileManager, short clientPort, long updateRate) {
         this.trackerClient = trackerClient;
         this.localFileManager = localFileManager;
         this.clientPort = clientPort;
-        this.updateRate = updateRate;
-    }
-
-    private SourcesUpdater start() {
         updater.scheduleAtFixedRate(this::updateSources, 0, updateRate, TimeUnit.MILLISECONDS);
-        return this;
     }
 
     public void updateSources() {
@@ -56,10 +50,6 @@ public class SourcesUpdater implements AutoCloseable {
         } catch (Exception e) {
             logger.error("Error during trying to updateSources tracker sources", e);
         }
-    }
-
-    public static SourcesUpdater startUpdater(TrackerClient trackerClient, LocalFilesManager localFileManager, short port, long updateRate) {
-        return new SourcesUpdater(trackerClient, localFileManager, port, updateRate).start();
     }
 
     @Override

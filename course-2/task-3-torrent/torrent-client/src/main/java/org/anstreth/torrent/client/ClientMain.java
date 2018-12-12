@@ -1,7 +1,10 @@
 package org.anstreth.torrent.client;
 
+import org.anstreth.torrent.client.storage.FilePartsDetails;
 import org.anstreth.torrent.tracker.response.FileInfo;
 import org.anstreth.torrent.tracker.response.SourceInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,6 +14,8 @@ import java.util.List;
 import java.util.Scanner;
 
 public class ClientMain {
+    private static Logger logger = LoggerFactory.getLogger(ClientMain.class);
+
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
             System.out.println("Usage: <port>");
@@ -55,6 +60,21 @@ public class ClientMain {
                         break;
                     }
 
+                    case "stats": {
+                        List<FilePartsDetails> filePartsDetails = client.listLocalFiles();
+                        System.out.printf("There are %s local files%n", filePartsDetails.size());
+                        for (FilePartsDetails filePartsDetail : filePartsDetails) {
+                            System.out.printf(
+                                "\t%s (id: %d, downloaded parts: %d/%d)%n",
+                                filePartsDetail.getFile().getFileName(),
+                                filePartsDetail.getFileId(),
+                                filePartsDetail.getReadyParts().size(),
+                                filePartsDetail.getNumberOfParts()
+                            );
+                        }
+                        break;
+                    }
+
                     case "download": {
                         int fileId = scanner.nextInt();
 
@@ -88,6 +108,7 @@ public class ClientMain {
                 }
             }
         } catch (Exception e) {
+            logger.error("Error happened during command handling", e);
             System.err.println("Error: " + e.getMessage());
         }
     }
