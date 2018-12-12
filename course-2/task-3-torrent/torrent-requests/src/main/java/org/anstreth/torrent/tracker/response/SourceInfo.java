@@ -6,6 +6,7 @@ import org.anstreth.torrent.tracker.response.serialization.SourceInfoDeserialize
 import org.anstreth.torrent.tracker.response.serialization.SourceInfoSerializer;
 
 import java.net.InetAddress;
+import java.util.Objects;
 
 @SerializeWith(SourceInfoSerializer.class)
 @DeserializeWith(SourceInfoDeserializer.class)
@@ -24,6 +25,20 @@ public class SourceInfo {
 
     public short getPort() {
         return port;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SourceInfo that = (SourceInfo) o;
+        return port == that.port &&
+            Objects.equals(address, that.address);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(address, port);
     }
 
     @Override

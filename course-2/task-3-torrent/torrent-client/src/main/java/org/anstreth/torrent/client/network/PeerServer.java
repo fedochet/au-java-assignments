@@ -79,7 +79,7 @@ public class PeerServer implements Closeable {
                         FilePartsDetails fileDetails = localFilesManager.getFileDetails(request.getFileId());
                         List<Integer> parts = new ArrayList<>(fileDetails.getReadyPartsIndexes());
 
-                        reflectiveSerializer.serialize(new StatResponse(parts));
+                        reflectiveSerializer.serialize(new StatResponse(parts), socket.getOutputStream());
                         break;
                     }
 

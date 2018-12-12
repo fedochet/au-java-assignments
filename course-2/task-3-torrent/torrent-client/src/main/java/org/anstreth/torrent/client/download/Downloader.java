@@ -122,7 +122,7 @@ public class Downloader implements AutoCloseable {
                         return Optional.of(source);
                     }
                 } catch (IOException e) {
-                    logger.error("Error connecting to client with source = " + source);
+                    logger.warn("Error connecting to client with source = " + source, e);
                 }
             }
 
