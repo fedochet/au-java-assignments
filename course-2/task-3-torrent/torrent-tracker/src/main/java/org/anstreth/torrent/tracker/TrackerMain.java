@@ -16,7 +16,7 @@ import java.time.temporal.ChronoUnit;
 public class TrackerMain {
     private static final Logger log = LoggerFactory.getLogger(TrackerMain.class);
 
-    private static final int SERVER_PORT = 8081;
+    private static final short SERVER_PORT = 8081;
     private static final Path FILE_INFO_STORAGE = Paths.get("tracker.files");
 
     private static final Duration SOURCE_EXPIRATION_TIME = Duration.of(20, ChronoUnit.SECONDS);
