@@ -20,6 +20,16 @@ public class PeerClient {
         }
     }
 
+    /**
+     * Returns inputStream from which file part can be read.
+     *
+     * User must close this input stream in order to close connection to the peer client.
+     *
+     * @param fileId id of target file
+     * @param partNumber part of target file
+     * @return inputStream, directly connected to the peer's connection socket
+     * @throws IOException if something goes wrong
+     */
     public InputStream getPart(int fileId, int partNumber) throws IOException {
         return new PeerClientConnection(address, port).getPart(fileId, partNumber);
     }

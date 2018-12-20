@@ -55,6 +55,15 @@ public class PeerServer implements Closeable {
         }
     }
 
+    @Override
+    public void close() throws IOException {
+        try {
+            serverSocket.close();
+        } finally {
+            executor.shutdown();
+        }
+    }
+
     private class PeerRequestHandler implements Runnable {
         private final Socket clientSocket;
 
@@ -69,23 +78,14 @@ public class PeerServer implements Closeable {
                 switch (requestType) {
                     case ClientRequestMarkers.STAT_MARKER: {
                         log.info("Handling stats request");
-                        StatRequest request = connection.readStatRequest();
-                        FilePartsDetails fileDetails = localFilesManager.getFileDetails(request.getFileId());
-                        List<Integer> parts = new ArrayList<>(fileDetails.getReadyPartsIndexes());
-
-                        connection.writeStatResponse(new StatResponse(parts));
+                        handleStatRequest(connection);
                         log.info("Stat request is handled");
                         break;
                     }
 
                     case ClientRequestMarkers.GET_MARKER: {
                         log.info("Handling get request");
-                        GetRequest request = connection.readGetRequest();
-                        FilePart part = new FilePart(request.getFileId(), request.getPartNumber());
-                        try (InputStream filePart = localFilesManager.openForReading(part)) {
-                            IOUtils.copy(filePart, connection.getOutputStream());
-                        }
-
+                        handleGetRequest(connection);
                         log.info("Get request is handled");
                         break;
                     }
@@ -94,14 +94,24 @@ public class PeerServer implements Closeable {
                 log.error("Error during handling request from " + clientSocket, e);
             }
         }
-    }
 
-    @Override
-    public void close() throws IOException {
-        try {
-            serverSocket.close();
-        } finally {
-            executor.shutdown();
+        private void handleGetRequest(PeerServerConnection connection) throws IOException {
+            GetRequest request = connection.readGetRequest();
+
+            FilePart part = new FilePart(request.getFileId(), request.getPartNumber());
+
+            try (InputStream filePart = localFilesManager.openForReading(part)) {
+                IOUtils.copy(filePart, connection.getOutputStream());
+            }
+        }
+
+        private void handleStatRequest(PeerServerConnection connection) throws IOException {
+            StatRequest request = connection.readStatRequest();
+
+            FilePartsDetails fileDetails = localFilesManager.getFileDetails(request.getFileId());
+            List<Integer> parts = new ArrayList<>(fileDetails.getReadyPartsIndexes());
+
+            connection.writeStatResponse(new StatResponse(parts));
         }
     }
 }
