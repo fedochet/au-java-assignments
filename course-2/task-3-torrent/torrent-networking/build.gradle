@@ -1,0 +1,18 @@
+plugins {
+    id 'java-library'
+}
+
+group 'org.anstreth'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+    implementation group: 'org.jetbrains', name: 'annotations', version: '16.0.3'
+}
