@@ -15,7 +15,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Scanner;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
 import static org.anstreth.torrent.tracker.request.TrackerRequestMarker.*;
 
@@ -24,6 +25,9 @@ public class TrackerMain {
 
     private static final int SERVER_PORT = 8081;
     private static final Path FILE_INFO_STORAGE = Paths.get("tracker.files");
+
+    private static final Duration SOURCE_EXPIRATION_TIME = Duration.of(20, ChronoUnit.SECONDS);
+    private static final Duration SOURCES_CHECKS_PERIOD = Duration.of(5, ChronoUnit.SECONDS);
 
     public static void main(String[] args) throws IOException {
         log.debug("Starting torrent tracker server.");
@@ -34,7 +38,7 @@ public class TrackerMain {
 
         TrackerController trackerController = new TrackerControllerImpl(
             new PersistentFileInfoRepository(FILE_INFO_STORAGE),
-            new InMemoryFileSourcesRepository()
+            new InMemoryFileSourcesRepository(SOURCE_EXPIRATION_TIME, SOURCES_CHECKS_PERIOD)
         );
 
         try (NetworkServer trackerServer = new SingleThreadServer(SERVER_PORT)) {
