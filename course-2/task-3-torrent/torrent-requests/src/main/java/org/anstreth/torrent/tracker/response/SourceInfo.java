@@ -1,15 +1,8 @@
 package org.anstreth.torrent.tracker.response;
 
-import org.anstreth.torrent.serialization.DeserializeWith;
-import org.anstreth.torrent.serialization.SerializeWith;
-import org.anstreth.torrent.tracker.response.serialization.SourceInfoDeserializer;
-import org.anstreth.torrent.tracker.response.serialization.SourceInfoSerializer;
-
 import java.net.InetAddress;
 import java.util.Objects;
 
-@SerializeWith(SourceInfoSerializer.class)
-@DeserializeWith(SourceInfoDeserializer.class)
 public class SourceInfo {
     private final InetAddress address;
     private final short port;

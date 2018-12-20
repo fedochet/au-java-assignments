@@ -15,9 +15,9 @@ public interface TrackerController {
     @NotNull
     UploadResponse handle(@NotNull UploadRequest request);
     @NotNull
-    ListResponse handle(@NotNull ListRequest request);
+    ListResponse handleListRequest();
     @NotNull
-    SourcesResponse handle(@NotNull SourcesRequest request);
+    SourcesResponse handleSourcesRequest(@NotNull SourcesRequest request);
     @NotNull
-    UpdateResponse handle(@NotNull Request<UpdateRequest> request);
+    UpdateResponse handleUpdateRequest(@NotNull Request<UpdateRequest> request);
 }

@@ -30,6 +30,10 @@ public abstract class Connection implements Closeable {
         }
     }
 
+    public InetAddress getAddress() {
+        return socket.getInetAddress();
+    }
+
     protected <T> List<T> readList(Deserializer<T> deserializer) throws IOException {
         int count = dataInputStream.readInt();
         List<T> result = new ArrayList<>();

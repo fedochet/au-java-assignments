@@ -31,20 +31,20 @@ public class TrackerControllerImpl implements TrackerController {
 
     @NotNull
     @Override
-    public ListResponse handle(@NotNull ListRequest request) {
+    public ListResponse handleListRequest() {
         return new ListResponse(fileInfoRepository.getAllFiles());
     }
 
     @NotNull
     @Override
-    public SourcesResponse handle(@NotNull SourcesRequest request) {
+    public SourcesResponse handleSourcesRequest(@NotNull SourcesRequest request) {
         List<SourceInfo> fileSources = sourcesRepository.getFileSources(request.getFileId());
         return new SourcesResponse(fileSources);
     }
 
     @NotNull
     @Override
-    public UpdateResponse handle(@NotNull Request<UpdateRequest> request) {
+    public UpdateResponse handleUpdateRequest(@NotNull Request<UpdateRequest> request) {
         UpdateRequest requestBody = request.getBody();
         for (Integer fileId : requestBody.getFileIds()) {
             sourcesRepository.addFileSource(fileId, request.getInetAddress(), requestBody.getPort());

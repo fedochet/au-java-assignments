@@ -7,10 +7,6 @@ import org.anstreth.torrent.client.response.StatResponse;
 import org.anstreth.torrent.client.storage.FilePart;
 import org.anstreth.torrent.client.storage.FilePartsDetails;
 import org.anstreth.torrent.client.storage.LocalFilesManager;
-import org.anstreth.torrent.network.SingleThreadServer;
-import org.anstreth.torrent.serialization.Deserializer;
-import org.anstreth.torrent.serialization.ReflectiveDeserializerFabric;
-import org.anstreth.torrent.serialization.ReflectiveSerializer;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class PeerServer implements Closeable {
-    private final static Logger log = LoggerFactory.getLogger(SingleThreadServer.class);
+    private final static Logger log = LoggerFactory.getLogger(PeerServer.class);
 
     private final ServerSocket serverSocket;
     private final ExecutorService executor = Executors.newCachedThreadPool();
