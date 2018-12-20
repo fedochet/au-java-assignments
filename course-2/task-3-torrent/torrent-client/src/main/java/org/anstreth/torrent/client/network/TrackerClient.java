@@ -1,60 +1,46 @@
 package org.anstreth.torrent.client.network;
 
-import org.anstreth.torrent.network.NetworkClient;
-import org.anstreth.torrent.network.NetworkClientImpl;
-import org.anstreth.torrent.tracker.request.*;
-import org.anstreth.torrent.tracker.response.*;
+import org.anstreth.torrent.tracker.response.FileInfo;
+import org.anstreth.torrent.tracker.response.SourceInfo;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
 
-import static org.anstreth.torrent.tracker.request.TrackerRequestMarker.*;
-
 public class TrackerClient {
-    private final NetworkClient networkClient;
+    private final InetAddress address;
+    private final short port;
 
     public TrackerClient(InetAddress address, short port) {
-        networkClient = new NetworkClientImpl(address, port);
+        this.address = address;
+        this.port = port;
     }
 
     public int addFile(String file, long size) throws IOException {
-        UploadResponse response = networkClient.makeRequest(
-            UPLOAD_REQUEST,
-            new UploadRequest(file, size),
-            UploadResponse.class
-        );
-
-        return response.getFileId();
+        try (TrackerClientConnection connection = connect()) {
+            return connection.addFile(file, size);
+        }
     }
 
     public List<FileInfo> listFiles() throws IOException {
-        ListResponse response = networkClient.makeRequest(
-            LIST_REQUEST,
-            new ListRequest(),
-            ListResponse.class
-        );
-
-        return response.getFiles();
+        try (TrackerClientConnection connection = connect()) {
+            return connection.listFiles();
+        }
     }
 
     public List<SourceInfo> getSources(int fileId) throws IOException {
-        SourcesResponse response = networkClient.makeRequest(
-            SOURCES_REQUEST,
-            new SourcesRequest(fileId),
-            SourcesResponse.class
-        );
-
-        return response.getAddresses();
+        try (TrackerClientConnection connection = connect()) {
+            return connection.getSources(fileId);
+        }
     }
 
     public boolean updateSources(short port, List<Integer> fileIds) throws IOException {
-        UpdateResponse response = networkClient.makeRequest(
-            UPDATE_REQUEST,
-            new UpdateRequest(port, fileIds),
-            UpdateResponse.class
-        );
+        try (TrackerClientConnection connection = connect()) {
+            return connection.updateSources(port, fileIds);
+        }
+    }
 
-        return response.isSuccessful();
+    private TrackerClientConnection connect() throws IOException {
+        return new TrackerClientConnection(address, port);
     }
 }

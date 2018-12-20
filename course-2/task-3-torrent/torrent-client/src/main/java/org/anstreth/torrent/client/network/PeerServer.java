@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
@@ -28,10 +27,6 @@ import java.util.concurrent.Executors;
 
 public class PeerServer implements Closeable {
     private final static Logger log = LoggerFactory.getLogger(SingleThreadServer.class);
-
-    private static final ReflectiveSerializer reflectiveSerializer = new ReflectiveSerializer();
-    private static final Deserializer<StatRequest> statRequestDeserializer = ReflectiveDeserializerFabric.createForClass(StatRequest.class);
-    private static final Deserializer<GetRequest> getRequestDeserializer = ReflectiveDeserializerFabric.createForClass(GetRequest.class);
 
     private final ServerSocket serverSocket;
     private final ExecutorService executor = Executors.newCachedThreadPool();
@@ -69,29 +64,29 @@ public class PeerServer implements Closeable {
 
         @Override
         public void run() {
-            try (Socket socket = clientSocket) {
-                DataInputStream inputStream = new DataInputStream(socket.getInputStream());
-                byte requestType = inputStream.readByte();
+            try (PeerServerConnection connection = new PeerServerConnection(clientSocket)) {
+                byte requestType = connection.readRequestType();
                 switch (requestType) {
                     case ClientRequestMarkers.STAT_MARKER: {
                         log.info("Handling stats request");
-                        StatRequest request = statRequestDeserializer.deserialize(inputStream);
+                        StatRequest request = connection.readStatRequest();
                         FilePartsDetails fileDetails = localFilesManager.getFileDetails(request.getFileId());
                         List<Integer> parts = new ArrayList<>(fileDetails.getReadyPartsIndexes());
 
-                        reflectiveSerializer.serialize(new StatResponse(parts), socket.getOutputStream());
+                        connection.writeStatResponse(new StatResponse(parts));
+                        log.info("Stat request is handled");
                         break;
                     }
 
                     case ClientRequestMarkers.GET_MARKER: {
                         log.info("Handling get request");
-                        GetRequest deserialize = getRequestDeserializer.deserialize(inputStream);
-                        FilePart part = new FilePart(deserialize.getFileId(), deserialize.getPartNumber());
+                        GetRequest request = connection.readGetRequest();
+                        FilePart part = new FilePart(request.getFileId(), request.getPartNumber());
                         try (InputStream filePart = localFilesManager.openForReading(part)) {
-                            IOUtils.copy(filePart, socket.getOutputStream());
+                            IOUtils.copy(filePart, connection.getOutputStream());
                         }
 
-                        log.info("Get is handled");
+                        log.info("Get request is handled");
                         break;
                     }
                 }
