@@ -19,8 +19,8 @@ public class TrackerMain {
     private static final short SERVER_PORT = 8081;
     private static final Path FILE_INFO_STORAGE = Paths.get("tracker.files");
 
-    private static final Duration SOURCE_EXPIRATION_TIME = Duration.of(20, ChronoUnit.SECONDS);
-    private static final Duration SOURCES_CHECKS_PERIOD = Duration.of(5, ChronoUnit.SECONDS);
+    private static final Duration SOURCE_EXPIRATION_TIME = Duration.of(5, ChronoUnit.MINUTES);
+    private static final Duration SOURCES_CHECKS_PERIOD = Duration.of(10, ChronoUnit.SECONDS);
 
     public static void main(String[] args) throws IOException {
         log.debug("Starting torrent tracker server.");

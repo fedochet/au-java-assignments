@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 class ClientArgs {
-    private static final long DOWNLOADER_UPDATE_PERIOD = 10 * 1000; // 10 seconds
+    private static final long DOWNLOADER_UPDATE_PERIOD = 5 * 1000; // 5 seconds
     private static final long SOURCES_UPDATE_PERIOD = 10 * 1000; // 10 seconds
 
     private static final long PART_SIZE = 1024 * 1024; // 1 mb
