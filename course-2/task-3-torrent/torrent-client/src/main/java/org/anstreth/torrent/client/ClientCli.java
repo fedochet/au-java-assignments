@@ -34,7 +34,7 @@ public class ClientCli implements Closeable {
         trackerClient = new TrackerClient(args.trackerAddress, args.trackerPort);
         localFilesManager = new LocalFilesManagerImpl(args.partSize, args.downloadsDir);
         downloader = new Downloader(trackerClient, localFilesManager, args.downloaderUpdatePeriodMs);
-        server = new PeerServer(args.clientPort, localFilesManager);
+        server = new PeerServer(args.clientPort, new ClientControllerImpl(localFilesManager));
         updater = new SourcesUpdater(trackerClient, localFilesManager, args.clientPort, args.sourcesUpdatePeriodMs);
     }
 
