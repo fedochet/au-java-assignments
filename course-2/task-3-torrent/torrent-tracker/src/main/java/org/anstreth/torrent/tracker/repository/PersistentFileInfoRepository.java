@@ -1,7 +1,6 @@
 package org.anstreth.torrent.tracker.repository;
 
 import org.anstreth.torrent.tracker.response.FileInfo;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -27,7 +26,7 @@ public class PersistentFileInfoRepository implements FileInfoRepository {
     }
 
     @Override
-    public int addFile(@NotNull String fileName, long fileSize) {
+    public int addFile(String fileName, long fileSize) {
         int fileId = generateId();
 
         try {
@@ -40,7 +39,7 @@ public class PersistentFileInfoRepository implements FileInfoRepository {
     }
 
     @Override
-    public @NotNull List<FileInfo> getAllFiles() {
+    public List<FileInfo> getAllFiles() {
         List<String> lines;
 
         try {

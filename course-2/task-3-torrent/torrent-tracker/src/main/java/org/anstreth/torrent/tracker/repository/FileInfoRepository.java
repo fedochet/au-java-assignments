@@ -1,7 +1,6 @@
 package org.anstreth.torrent.tracker.repository;
 
 import org.anstreth.torrent.tracker.response.FileInfo;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -13,11 +12,11 @@ public interface FileInfoRepository {
      * @param fileSize size of file
      * @return unique id of saved {@link FileInfo}
      */
-    int addFile(@NotNull String fileName, long fileSize);
+    int addFile(String fileName, long fileSize);
 
     /**
      * @return fileInfos sorted by fileId.
      */
-    @NotNull
+
     List<FileInfo> getAllFiles();
 }

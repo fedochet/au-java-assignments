@@ -1,7 +1,6 @@
 package org.anstreth.torrent.tracker.repository;
 
 import org.anstreth.torrent.tracker.response.SourceInfo;
-import org.jetbrains.annotations.NotNull;
 
 import java.net.InetAddress;
 import java.time.Duration;
@@ -21,7 +20,7 @@ public class InMemoryFileSourcesRepository implements FileSourcesRepository {
     }
 
     @Override
-    public @NotNull List<SourceInfo> getFileSources(int fileId) {
+    public List<SourceInfo> getFileSources(int fileId) {
         Set<TimedSourceInfo> sources = this.sourcesByFileId.getOrDefault(fileId, Collections.emptySet());
         synchronized (sources) {
             return sources.stream()
@@ -31,7 +30,7 @@ public class InMemoryFileSourcesRepository implements FileSourcesRepository {
     }
 
     @Override
-    public void addFileSource(int fileId, @NotNull InetAddress inetAddress, short port) {
+    public void addFileSource(int fileId, InetAddress inetAddress, short port) {
         sourcesByFileId
             .computeIfAbsent(fileId, id -> Collections.synchronizedSet(new HashSet<>()))
             .add(timed(new SourceInfo(inetAddress, port)));
